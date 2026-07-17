@@ -1,0 +1,2488 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diamond Flow — All-in-One Studio</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/umd/ffmpeg.js"></script>
+<style>
+/* ========== GLOBAL THEME ========== */
+:root{
+  --bg-panel:#111115; --bg-page:#09090b; --text-main:#ffffff;
+  --accent:#00ffcc; --accent-hover:#00e6b8;
+  --card-bg:#1e1e24; --warn:#f39c12; --err:#ff4757; --ok:#2ed573; --muted:#888;
+  --purple:#6c5ce7; --purple-hover:#a29bfe;
+  --sidebar-w:260px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Be Vietnam Pro',sans-serif;}
+body{display:flex;background:var(--bg-page);color:var(--text-main);height:100vh;overflow:hidden;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:#333;border-radius:4px;}
+a{color:var(--accent);}
+
+/* ========== SIDEBAR ========== */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg-panel);
+  display:flex;flex-direction:column;border-right:1px solid #222;z-index:50;
+  box-shadow:4px 0 20px rgba(0,0,0,.7);
+}
+.sidebar-brand{
+  padding:18px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid #222;
+}
+.sidebar-brand .logo-text{font-size:1rem;font-weight:900;color:var(--accent);letter-spacing:.5px;}
+.sidebar-brand .logo-sub{font-size:.65rem;color:var(--muted);margin-top:-2px;}
+.sidebar-nav{flex:1;display:flex;flex-direction:column;gap:4px;padding:10px 8px;overflow-y:auto;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;
+  cursor:pointer;font-size:.82rem;font-weight:700;color:#ccc;transition:.2s;
+  border:1px solid transparent;position:relative;
+}
+.nav-item:hover{background:rgba(255,255,255,.04);color:#fff;}
+.nav-item.active{background:rgba(0,255,204,.08);color:var(--accent);border-color:rgba(0,255,204,.2);}
+.nav-item .nav-icon{font-size:1.1rem;width:24px;text-align:center;}
+.nav-item .nav-label{line-height:1.3;}
+.nav-item .nav-badge{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  font-size:.6rem;padding:2px 6px;border-radius:8px;font-weight:800;
+}
+.badge-auto{background:var(--accent);color:#000;}
+.sidebar-footer{
+  padding:14px 16px;border-top:1px solid #222;font-size:.7rem;color:var(--muted);text-align:center;
+}
+
+/* ========== MAIN CONTENT AREA ========== */
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.module-view{display:none;flex:1;overflow:hidden;}
+.module-view.active{display:flex;}
+
+/* ========== SHARED FORM STYLES ========== */
+.input-group{display:flex;flex-direction:column;gap:6px;}
+label{font-size:.78rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;}
+.hint{font-size:.72rem;color:var(--muted);line-height:1.4;margin-top:-3px;}
+input[type=text],input[type=password],input[type=number],textarea,select{
+  background:#1a1a20;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-size:.85rem;transition:.2s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;}
+textarea{font-family:'Be Vietnam Pro',sans-serif;line-height:1.55;resize:vertical;}
+button{
+  background:var(--accent);color:#000;border:none;padding:12px;border-radius:8px;font-weight:800;
+  cursor:pointer;font-size:.88rem;text-transform:uppercase;letter-spacing:.3px;transition:.2s;
+}
+button:hover{background:var(--accent-hover);transform:translateY(-1px);}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-red{background:var(--err);color:#fff;padding:14px;font-size:.95rem;}
+.btn-red:hover{background:#ff6b81;}
+.btn-orange{background:var(--warn);color:#000;padding:11px;font-size:.85rem;}
+.btn-orange:hover{background:var(--ok);}
+.btn-purple{background:var(--purple);color:#fff;padding:11px;font-size:.85rem;}
+.btn-purple:hover{background:var(--purple-hover);}
+.btn-ghost{background:#2f3640;color:#fff;border:1px solid #555;padding:8px 12px;font-size:.72rem;}
+.btn-ghost:hover{background:#4b6584;}
+.btn-sm{padding:7px 10px;font-size:.72rem;}
+
+.file-drop{
+  border:1.5px dashed #444;border-radius:8px;padding:12px;text-align:center;font-size:.78rem;
+  color:var(--muted);cursor:pointer;transition:.2s;
+}
+.file-drop:hover{border-color:var(--accent);color:var(--accent);}
+.row2{display:flex;gap:10px;}
+.row2 > div{flex:1;display:flex;flex-direction:column;gap:6px;}
+.log-box{
+  background:#000;border:1px solid #222;border-radius:8px;padding:10px;font-family:monospace;
+  font-size:.72rem;line-height:1.6;height:120px;overflow-y:auto;color:#0f0;
+}
+.log-line{white-space:pre-wrap;word-break:break-word;}
+.log-warn{color:var(--warn);}
+.log-err{color:var(--err);}
+.log-ok{color:var(--ok);}
+.log-info{color:#7fd7ff;}
+pre.output-box{
+  flex:1;background:#0e0e12;border:1px solid #2a2a32;border-radius:10px;padding:14px;
+  font-family:monospace;font-size:.78rem;line-height:1.6;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  color:#d5f7ee;min-height:0;
+}
+.output-box.empty{color:#555;display:flex;align-items:center;justify-content:center;font-family:'Be Vietnam Pro',sans-serif;font-style:italic;}
+
+/* ========== MODULE LAYOUTS ========== */
+/* Module 1 & 2: side-by-side */
+.layout-split{display:flex;flex:1;overflow:hidden;}
+.layout-split .ctrl-panel{
+  width:460px;min-width:460px;background:var(--bg-panel);padding:22px;
+  display:flex;flex-direction:column;gap:14px;border-right:1px solid #222;
+  overflow-y:auto;height:100vh;
+}
+.layout-split .out-area{flex:1;display:flex;flex-direction:column;height:100vh;overflow-y:auto;padding:24px 28px;gap:18px;}
+.title-banner{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.title-banner::before,.title-banner::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,rgba(0,255,204,.25),transparent);}
+h2.mod-title{font-size:1.05rem;color:var(--accent);font-weight:800;white-space:nowrap;}
+.subtitle{font-size:.72rem;color:var(--muted);line-height:1.5;margin-top:-8px;}
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;background:var(--card-bg);
+  border:1px solid #2a2a32;border-radius:10px;padding:12px 16px;
+}
+.status-bar .msg{font-size:.88rem;font-weight:600;color:var(--accent);}
+.stat-pills{display:flex;gap:8px;}
+.pill{background:#1a1a20;border:1px solid #333;border-radius:20px;padding:5px 12px;font-size:.74rem;color:#ccc;font-weight:600;}
+.pill b{color:var(--accent);}
+.output-grid{display:flex;gap:18px;flex:1;min-height:0;}
+.output-col{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.output-col-head{display:flex;align-items:center;justify-content:space-between;}
+.output-col-head h3{font-size:.88rem;color:#fff;font-weight:800;}
+.output-col-head .actions{display:flex;gap:6px;}
+
+/* Module 3: full-width */
+.layout-full{display:flex;flex:1;overflow:hidden;}
+.layout-full .ctrl-panel{
+  width:450px;min-width:450px;background:var(--bg-panel);padding:22px;
+  display:flex;flex-direction:column;gap:16px;border-right:1px solid #222;
+  overflow-y:auto;height:100vh;z-index:10;
+}
+.layout-full .preview-area{
+  flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  background:radial-gradient(circle at center,#1a1a24 0%,#09090b 100%);gap:16px;
+}
+#w3-videoCanvas, #m3-videoCanvas{width:360px;height:640px;background:#000;border-radius:14px;border:1px solid #222;
+  box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 20px rgba(0,255,204,.1);object-fit:contain;will-change:transform;}
+.preview-controls-bar{
+  display:flex;align-items:center;gap:12px;background:rgba(30,30,36,.8);
+  padding:10px 20px;border-radius:28px;border:1px solid #333;backdrop-filter:blur(10px);
+}
+.preview-controls-bar button{background:transparent;border:1px solid #555;color:white;padding:7px 16px;border-radius:18px;font-size:.8rem;text-transform:none;}
+.preview-controls-bar button:hover{background:rgba(255,255,255,.1);border-color:#fff;}
+.preview-page-info{font-size:.9rem;font-weight:700;color:var(--accent);min-width:80px;text-align:center;}
+.status-text{font-size:.85rem;font-weight:bold;text-align:center;color:var(--accent);}
+
+/* Slides list (Module 3) */
+.slides-list{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+.slide-card{
+  background:var(--card-bg);border:1px solid #333;border-radius:10px;padding:12px;
+  display:flex;flex-direction:column;gap:10px;transition:.2s;
+}
+.slide-card:hover{border-color:#555;}
+.slide-card-header{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;font-weight:700;color:var(--accent);}
+.slide-card-title{font-size:.88rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.slide-card-controls{display:flex;align-items:center;gap:6px;}
+.slide-card-controls input[type="number"]{width:70px;background:#111;border:1px solid #444;color:#fff;padding:7px;border-radius:6px;font-size:.82rem;text-align:center;}
+.audio-actions{display:flex;gap:6px;align-items:center;width:100%;flex-wrap:wrap;}
+.audio-actions button{padding:7px 8px;font-size:.72rem;flex:1;min-width:70px;color:white;font-weight:600;}
+.btn-upload{background:#2f3640;border:1px solid #555;}
+.btn-upload:hover{background:#4b6584;}
+.btn-img-upload{background:#8e44ad;border:1px solid #9b59b6;}
+.btn-img-upload:hover{background:#9b59b6;}
+.btn-tts{background:#e67e22;border:1px solid #f39c12;}
+.btn-tts:hover{background:#f39c12;}
+.btn-tts:disabled{opacity:.5;cursor:not-allowed;}
+.btn-script{background:#16a085;border:1px solid #1abc9c;}
+.btn-script:hover{background:#1abc9c;}
+.rec-active{background:var(--err)!important;animation:pulse 1s infinite;}
+@keyframes pulse{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
+.status-labels{display:flex;justify-content:space-between;width:100%;font-size:.72rem;margin-top:3px;}
+.audio-status{color:#2ed573;font-weight:600;}
+.img-status{color:#f39c12;font-weight:600;}
+.tts-config-row{display:flex;gap:8px;}
+.tts-config-row select{flex:1;background:#1a1a20;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-size:.82rem;}
+.tts-config-row input[type="number"]{width:75px;background:#1a1a20;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;text-align:center;}
+.tts-hint{font-size:.72rem;color:#888;margin-top:-3px;}
+
+/* Script Modal */
+.script-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:flex-end;}
+.script-modal-overlay.active{display:flex;}
+.script-modal-panel{width:460px;max-width:92vw;height:100vh;background:var(--bg-panel);border-left:1px solid #333;box-shadow:-10px 0 40px rgba(0,0,0,.8);padding:22px;display:flex;flex-direction:column;gap:12px;animation:slideInPanel .25s ease-out;}
+@keyframes slideInPanel{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.script-modal-header{display:flex;justify-content:space-between;align-items:center;}
+.script-modal-header h3{color:var(--accent);font-size:1rem;font-weight:800;}
+.script-modal-close{background:transparent;border:1px solid #555;color:#fff;padding:5px 12px;border-radius:6px;font-size:.78rem;text-transform:none;font-weight:600;}
+.script-modal-close:hover{background:rgba(255,255,255,.1);}
+.script-modal-hint{font-size:.76rem;color:#888;line-height:1.4;}
+#script-textarea{flex:1;background:#1a1a20;border:1px solid #333;color:#fff;padding:14px;border-radius:8px;font-size:.9rem;line-height:1.7;resize:none;font-family:'Be Vietnam Pro',sans-serif;}
+#script-textarea:focus{border-color:var(--accent);outline:none;}
+.script-modal-footer{display:flex;gap:8px;}
+.script-modal-footer button{flex:1;padding:11px;}
+#script-reset-btn{background:#2f3640;border:1px solid #555;color:#fff;}
+#script-reset-btn:hover{background:#4b6584;}
+
+/* FFmpeg Loading */
+.ffmpeg-loading-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.ffmpeg-loading-overlay.active{display:flex;}
+.ffmpeg-loading-overlay .spinner{width:50px;height:50px;border:4px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ffmpeg-loading-overlay .loading-text{font-size:1rem;font-weight:700;color:var(--accent);text-align:center;max-width:380px;}
+.ffmpeg-loading-overlay .loading-sub{font-size:.82rem;color:#aaa;text-align:center;max-width:380px;}
+.ffmpeg-progress-bar{width:300px;height:7px;background:#222;border-radius:4px;overflow:hidden;}
+.ffmpeg-progress-bar .fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#c67cff);border-radius:4px;transition:width .3s ease;}
+.ffmpeg-progress-pct{font-size:1.3rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;}
+
+/* ========== AUTO FLOW WIZARD ========== */
+.layout-wizard{display:flex;flex:1;overflow:hidden;flex-direction:column;}
+.wizard-stepper{
+  display:flex;align-items:center;gap:0;padding:16px 30px;background:var(--bg-panel);
+  border-bottom:1px solid #222;
+}
+.wizard-step{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;color:#555;position:relative;}
+.wizard-step.active{color:var(--accent);}
+.wizard-step.done{color:var(--ok);}
+.wizard-step-num{
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:800;border:2px solid #444;color:#666;
+}
+.wizard-step.active .wizard-step-num{border-color:var(--accent);color:var(--accent);background:rgba(0,255,204,.1);}
+.wizard-step.done .wizard-step-num{border-color:var(--ok);color:#000;background:var(--ok);}
+.wizard-connector{flex:1;height:2px;background:#333;margin:0 8px;min-width:20px;}
+.wizard-connector.done{background:var(--ok);}
+.wizard-body{flex:1;overflow-y:auto;padding:24px 30px;display:flex;flex-direction:column;gap:18px;}
+.wizard-step-panel{display:none;}
+.wizard-step-panel.active{display:flex;flex-direction:column;gap:14px;}
+.wizard-actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 30px;border-top:1px solid #222;background:var(--bg-panel);}
+.wizard-review-box{
+  background:#0e0e12;border:1px solid #2a2a32;border-radius:10px;padding:16px;
+  font-family:monospace;font-size:.82rem;line-height:1.6;color:#d5f7ee;
+  max-height:50vh;overflow:auto;white-space:pre-wrap;word-break:break-word;
+}
+.wizard-review-edit{
+  background:#1a1a20;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;
+  font-family:monospace;font-size:.82rem;line-height:1.6;color:#d5f7ee;
+  width:100%;min-height:200px;resize:vertical;
+}
+.wizard-review-edit:focus{border-color:var(--accent);outline:none;}
+.wizard-notice{
+  background:rgba(0,255,204,.05);border:1px solid rgba(0,255,204,.2);border-radius:8px;
+  padding:10px 14px;font-size:.78rem;color:var(--accent);line-height:1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- ========== SIDEBAR ========== -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div>
+      <div class="logo-text">Diamond Flow</div>
+      <div class="logo-sub">All-in-One Studio</div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" onclick="switchModule('auto')" id="nav-auto">
+      <span class="nav-icon">&#128640;</span>
+      <span class="nav-label">AUTO FLOW<br><small style="font-weight:400;font-size:.68rem;color:var(--muted)">Quy trình liên hoàn</small></span>
+    </div>
+    <div class="nav-item" onclick="switchModule('m1')" id="nav-m1">
+      <span class="nav-icon">&#128221;</span>
+      <span class="nav-label">MODULE 1<br><small style="font-weight:400;font-size:.68rem;color:var(--muted)">Tạo Kịch Bản</small></span>
+    </div>
+    <div class="nav-item" onclick="switchModule('m2')" id="nav-m2">
+      <span class="nav-icon">&#128202;</span>
+      <span class="nav-label">MODULE 2<br><small style="font-weight:400;font-size:.68rem;color:var(--muted)">Slides JSON & Voice</small></span>
+    </div>
+    <div class="nav-item" onclick="switchModule('m3')" id="nav-m3">
+      <span class="nav-icon">&#127916;</span>
+      <span class="nav-label">MODULE 3<br><small style="font-weight:400;font-size:.68rem;color:var(--muted)">Studio Render Video</small></span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    Diamond Flow v2.0 &mdash; Groq / Gemini / Viettel AI
+  </div>
+</div>
+
+<!-- ========== MAIN CONTENT ========== -->
+<div class="main-content">
+
+  <!-- ==================== AUTO FLOW WIZARD ==================== -->
+  <div class="module-view active" id="view-auto">
+    <div class="layout-wizard">
+      <div class="wizard-stepper">
+        <div class="wizard-step active" id="ws1">
+          <span class="wizard-step-num">1</span>
+          <span>Kịch Bản</span>
+        </div>
+        <div class="wizard-connector" id="wc1"></div>
+        <div class="wizard-step" id="ws2">
+          <span class="wizard-step-num">2</span>
+          <span>Slides JSON</span>
+        </div>
+        <div class="wizard-connector" id="wc2"></div>
+        <div class="wizard-step" id="ws3">
+          <span class="wizard-step-num">3</span>
+          <span>Render Video</span>
+        </div>
+      </div>
+
+      <div class="wizard-body">
+        <!-- AUTO STEP 1: Kịch bản -->
+        <div class="wizard-step-panel active" id="wiz-step1">
+          <div class="wizard-notice">
+            <strong>Bước 1 — Tạo Kịch Bản Video.</strong> Nhập nội dung & thông tin bên dưới, bấm "Tạo Kịch bản". Kết quả sẽ hiện ra để bạn kiểm duyệt trước khi chuyển sang Bước 2.
+          </div>
+          <div class="row2">
+            <div class="input-group">
+              <label>Chủ đề chính</label>
+              <input type="text" id="w1-topic" placeholder="VD: Lạm phát, Lãi suất...">
+            </div>
+            <div class="input-group">
+              <label>Số ý chính (Body)</label>
+              <select id="w1-body-sections">
+                <option value="3">3 ý chính</option>
+                <option value="4">4 ý chính</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Nội dung bài viết gốc</label>
+            <div class="file-drop" id="w1-file-drop">📄 Kéo thả hoặc bấm để tải file .docx / .txt</div>
+            <input type="file" id="w1-file-input" accept=".docx,.txt" style="display:none;">
+            <textarea id="w1-source-text" placeholder="Dán nội dung bài viết vào đây..." style="height:150px;"></textarea>
+          </div>
+          <div class="row2">
+            <div class="input-group">
+              <label>Nhà cung cấp AI</label>
+              <select id="w1-provider-select">
+                <option value="groq">Groq (Nhanh, miễn phí)</option>
+                <option value="gemini">Google Gemini (Thông minh hơn)</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>API Key</label>
+              <input type="password" id="w1-api-key" placeholder="Dán API key...">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Model</label>
+            <select id="w1-model-select"></select>
+          </div>
+          <div class="input-group">
+            <label>Gợi ý chủ đề phụ (Tuỳ chọn)</label>
+            <input type="text" id="w1-extra-hint" placeholder="VD: tập trung góc nhìn người trẻ...">
+          </div>
+          <button class="btn-red" id="w1-generate-btn">TẠO KỊCH BẢN</button>
+          <div class="input-group">
+            <label>Nhật ký</label>
+            <div class="log-box" id="w1-log-box"><div class="log-line log-info">Sẵn sàng.</div></div>
+          </div>
+          <!-- Review area (hidden until step1 done) -->
+          <div id="w1-review-section" style="display:none;">
+            <label style="color:var(--ok);">KẾT QUẢ — Kiểm duyệt và chỉnh sửa trước khi chuyển bước:</label>
+            <textarea class="wizard-review-edit" id="w1-review-edit" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <!-- AUTO STEP 2: Slides JSON -->
+        <div class="wizard-step-panel" id="wiz-step2">
+          <div class="wizard-notice">
+            <strong>Bước 2 — Tạo Slides JSON & Voice-over.</strong> Dữ liệu từ Bước 1 đã được đẩy vào đây. Kiểm tra, chỉnh sửa, rồi bấm "Tạo Slides JSON".
+          </div>
+          <div class="row2">
+            <div class="input-group">
+              <label>Chủ đề chính</label>
+              <input type="text" id="w2-topic">
+            </div>
+            <div class="input-group">
+              <label>Số slide tối thiểu</label>
+              <input type="number" id="w2-min-slides" value="8" min="3" max="20">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Nội dung gốc (từ Bước 1)</label>
+            <textarea id="w2-source-text" style="height:120px;"></textarea>
+          </div>
+          <div class="row2">
+            <div class="input-group">
+              <label>Nhà cung cấp AI</label>
+              <select id="w2-provider-select">
+                <option value="groq">Groq</option>
+                <option value="gemini">Google Gemini</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>API Key</label>
+              <input type="password" id="w2-api-key">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Model</label>
+            <select id="w2-model-select"></select>
+          </div>
+          <div class="row2">
+            <div class="input-group">
+              <label>Từ tối thiểu / kịch bản</label>
+              <input type="number" id="w2-min-words" value="60" min="20" max="300">
+            </div>
+            <div></div>
+          </div>
+          <button class="btn-red" id="w2-generate-btn">TẠO SLIDES JSON & VOICE</button>
+          <div class="input-group">
+            <label>Nhật ký</label>
+            <div class="log-box" id="w2-log-box"><div class="log-line log-info">Sẵn sàng.</div></div>
+          </div>
+          <!-- Review areas -->
+          <div id="w2-review-section" style="display:none;">
+            <label style="color:var(--ok);">slides.json — Kiểm duyệt:</label>
+            <textarea class="wizard-review-edit" id="w2-review-json" spellcheck="false" style="min-height:180px;font-family:monospace;"></textarea>
+            <label style="color:var(--ok);">Kịch bản Voice-over — Kiểm duyệt:</label>
+            <textarea class="wizard-review-edit" id="w2-review-script" spellcheck="false" style="min-height:140px;"></textarea>
+          </div>
+        </div>
+
+        <!-- AUTO STEP 3: Render -->
+        <div class="wizard-step-panel" id="wiz-step3">
+          <div class="wizard-notice">
+            <strong>Bước 3 — Render Video.</strong> JSON từ Bước 2 đã được đẩy vào Module 3 bên dưới. Tải ảnh/nhạc, cấu hình TTS, rồi bấm xuất video.
+          </div>
+          <div style="flex:1;display:flex;gap:0;">
+            <!-- Embedded Module 3 inside wizard -->
+            <div class="layout-full" style="flex:1;">
+              <div class="ctrl-panel" id="w3-panel">
+                <div class="title-banner"><h2 class="mod-title">STUDIO ENGINE</h2></div>
+                <div class="input-group">
+                  <label>1. Nền tổng thể (Tuỳ chọn)</label>
+                  <input type="file" id="w3-bg-upload" accept="image/*">
+                </div>
+                <div class="input-group">
+                  <label>1b. Nền trang Intro (Tuỳ chọn)</label>
+                  <input type="file" id="w3-intro-bg-upload" accept="image/*">
+                </div>
+                <div class="input-group">
+                  <label>2. Logo Góc (Tuỳ chọn)</label>
+                  <input type="file" id="w3-logo-upload" accept="image/*">
+                </div>
+                <div class="input-group">
+                  <label>3. Ngày tháng & Địa điểm</label>
+                  <input type="text" id="w3-date-input" value="18/07/2026" placeholder="DD/MM/YYYY">
+                  <input type="text" id="w3-location-input" value="TP. Hồ Chí Minh" placeholder="VD: TP. Hà Nội, TP. Hồ Chí Minh...">
+                </div>
+                <div class="input-group">
+                  <label>3b. Viettel AI TTS</label>
+                  <input type="text" id="w3-viettel-endpoint" value="https://viettelai.vn/tts/speech_synthesis" placeholder="Endpoint API">
+                  <input type="text" id="w3-viettel-token" placeholder="Token API Viettel AI...">
+                  <div class="tts-config-row">
+                    <select id="w3-viettel-voice">
+                      <option value="hn-quynhanh">Quỳnh Anh — Nữ miền Bắc</option>
+                      <option value="hcm-diemmy">Diễm My — Nữ miền Nam</option>
+                      <option value="hn-thanhha">Thanh Hà — Nữ miền Bắc</option>
+                      <option value="hcm-phuongly">Phương Ly — Nữ miền Nam</option>
+                      <option value="hn-thanhtung">Thanh Tùng — Nam miền Bắc</option>
+                      <option value="hcm-minhquan">Minh Quân — Nam miền Nam</option>
+                      <option value="hn-namkhanh">Nam Khánh — Nam miền Bắc</option>
+                      <option value="hn-thienan">Thiên An — Nữ miền Bắc</option>
+                    </select>
+                    <input type="number" id="w3-viettel-speed" value="1.0" step="0.1" min="0.5" max="2.0" title="Tốc độ đọc">
+                  </div>
+                  <input type="text" id="w3-viettel-voice-custom" placeholder="Hoặc nhập tay mã giọng khác">
+                  <button type="button" class="btn-ghost" id="w3-load-voices-btn">Tải danh sách giọng</button>
+                </div>
+                <div class="input-group">
+                  <label>4. Dữ liệu JSON</label>
+                  <textarea id="w3-json-input" style="height:160px;font-family:monospace;color:#00ffcc;">[]</textarea>
+                </div>
+                <button id="w3-render-btn">CẬP NHẬT JSON & TẠO TRANG</button>
+                <div class="input-group">
+                  <label>5. Assets: Âm thanh & Ảnh</label>
+                  <button id="w3-tts-all-btn" class="btn-orange">TẠO TTS AI CHO TẤT CẢ</button>
+                  <div class="slides-list" id="w3-slides-list-box"></div>
+                </div>
+                <div id="w3-status" class="status-text">Sẵn sàng</div>
+                <button class="btn-red" id="w3-start-btn">XUẤT VIDEO</button>
+              </div>
+              <div class="preview-area">
+                <canvas id="w3-videoCanvas" width="1080" height="1920"></canvas>
+                <div class="preview-controls-bar" id="w3-preview-controls-bar" style="display:none;">
+                  <button onclick="M3.changePreviewSlide(-1)">&#9664; Trước</button>
+                  <span class="preview-page-info" id="w3-preview-page-info">Trang 1 / 1</span>
+                  <button onclick="M3.changePreviewSlide(1)">Sau &#9654;</button>
+                  <button onclick="M3.playCurrentPreviewAudio()">&#128266; Nghe</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-actions">
+        <button class="btn-ghost" id="wiz-back-btn" style="display:none;">&larr; Quay lại</button>
+        <div style="flex:1"></div>
+        <button id="wiz-approve-btn" class="btn-orange" style="display:none;">Đã duyệt, chuyển sang Bước tiếp &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODULE 1: TẠO KỊCH BẢN ==================== -->
+  <div class="module-view" id="view-m1">
+    <div class="layout-split">
+      <div class="ctrl-panel">
+        <div class="title-banner"><h2 class="mod-title">TẠO KỊCH BẢN VIDEO</h2></div>
+        <p class="subtitle">Kịch bản Shorts/TikTok mảng Tài chính - Kinh tế. Hỗ trợ Groq + Gemini.</p>
+        <div class="input-group">
+          <label>1. Chủ đề chính</label>
+          <input type="text" id="m1-topic" placeholder="VD: Lạm phát, Lãi suất, Bất động sản...">
+        </div>
+        <div class="input-group">
+          <label>2. Nội dung bài viết gốc</label>
+          <div class="file-drop" id="m1-file-drop">📄 Kéo thả hoặc bấm để tải file .docx / .txt</div>
+          <input type="file" id="m1-file-input" accept=".docx,.txt" style="display:none;">
+          <textarea id="m1-source-text" placeholder="Dán nội dung bài viết vào đây..." style="height:160px;"></textarea>
+        </div>
+        <div class="row2">
+          <div class="input-group">
+            <label>3. Nhà cung cấp AI</label>
+            <select id="m1-provider-select">
+              <option value="groq">Groq (Nhanh)</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>4. API Key</label>
+            <input type="password" id="m1-api-key" placeholder="Dán API key...">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>5. Model</label>
+          <select id="m1-model-select"></select>
+        </div>
+        <div class="row2">
+          <div class="input-group">
+            <label>6. Số ý chính (Body)</label>
+            <select id="m1-body-sections"><option value="3">3 ý chính</option><option value="4">4 ý chính</option></select>
+          </div>
+          <div class="input-group">
+            <label>7. Gợi ý phụ</label>
+            <input type="text" id="m1-extra-hint" placeholder="Tuỳ chọn...">
+          </div>
+        </div>
+        <button class="btn-red" id="m1-generate-btn">TẠO KỊCH BẢN</button>
+        <button class="btn-orange" id="m1-regen-btn" style="display:none;">TẠO LẠI</button>
+        <div class="input-group">
+          <label>Nhật ký</label>
+          <div class="log-box" id="m1-log-box"><div class="log-line log-info">Sẵn sàng.</div></div>
+        </div>
+      </div>
+      <div class="out-area">
+        <div class="status-bar">
+          <span class="msg" id="m1-status-msg">Chưa có dữ liệu.</span>
+          <div class="stat-pills" id="m1-stat-pills"></div>
+        </div>
+        <div class="output-grid">
+          <div class="output-col">
+            <div class="output-col-head">
+              <h3>Kịch bản gốc (Markdown)</h3>
+              <div class="actions">
+                <button class="btn-ghost" onclick="copyEl('m1-raw-output')">Copy</button>
+                <button class="btn-ghost" onclick="dlEl('kich_ban_video.md','m1-raw-output')">Tải .md</button>
+              </div>
+            </div>
+            <pre class="output-box empty" id="m1-raw-output">Kịch bản sẽ hiện ở đây...</pre>
+          </div>
+          <div class="output-col">
+            <div class="output-col-head">
+              <h3>Kịch bản dọn sạch (Plain Text)</h3>
+              <div class="actions">
+                <button class="btn-ghost" onclick="copyEl('m1-clean-output')">Copy</button>
+                <button class="btn-ghost" onclick="dlEl('kich_ban_video.txt','m1-clean-output')">Tải .txt</button>
+              </div>
+            </div>
+            <button class="btn-purple" id="m1-clean-btn" disabled>DON SACH — Bo markdown</button>
+            <pre class="output-box empty" id="m1-clean-output">Sau khi don sach se hien o day...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODULE 2: TẠO SLIDES JSON ==================== -->
+  <div class="module-view" id="view-m2">
+    <div class="layout-split">
+      <div class="ctrl-panel">
+        <div class="title-banner"><h2 class="mod-title">TẠO NỘI DUNG SLIDE</h2></div>
+        <p class="subtitle">Bước 1: Tạo khung phân cảnh slide (JSON). Bước 2: Sinh lời thoại voice-over.</p>
+        <div class="input-group">
+          <label>1. Chủ đề chính</label>
+          <input type="text" id="m2-topic" placeholder="VD: Lạm phát, Lãi suất...">
+        </div>
+        <div class="input-group">
+          <label>2. Nội dung gốc</label>
+          <div class="file-drop" id="m2-file-drop">📄 Kéo thả hoặc bấm để tải file .docx / .txt</div>
+          <input type="file" id="m2-file-input" accept=".docx,.txt" style="display:none;">
+          <textarea id="m2-source-text" placeholder="...hoặc dán trực tiếp nội dung bài viết vào đây" style="height:140px;"></textarea>
+        </div>
+        <div class="row2">
+          <div class="input-group">
+            <label>3. Nhà cung cấp AI</label>
+            <select id="m2-provider-select">
+              <option value="groq">Groq</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>4. API Key</label>
+            <input type="password" id="m2-api-key" placeholder="Dán API key...">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>5. Model</label>
+          <select id="m2-model-select"></select>
+        </div>
+        <div class="row2">
+          <div class="input-group">
+            <label>6. Số slide tối thiểu</label>
+            <input type="number" id="m2-min-slides" value="8" min="3" max="20">
+          </div>
+          <div class="input-group">
+            <label>Từ tối thiểu / kịch bản</label>
+            <input type="number" id="m2-min-words" value="60" min="20" max="300">
+          </div>
+        </div>
+        <button class="btn-red" id="m2-generate-btn">TẠO NỘI DUNG (1 lần gọi)</button>
+        <button class="btn-orange" id="m2-regen-btn" style="display:none;">TẠO LẠI</button>
+        <div class="input-group">
+          <label>Nhật ký</label>
+          <div class="log-box" id="m2-log-box"><div class="log-line log-info">Sẵn sàng.</div></div>
+        </div>
+      </div>
+      <div class="out-area">
+        <div class="status-bar">
+          <span class="msg" id="m2-status-msg">Chưa có dữ liệu.</span>
+          <div class="stat-pills" id="m2-stat-pills"></div>
+        </div>
+        <div class="output-grid">
+          <div class="output-col">
+            <div class="output-col-head">
+              <h3>slides.json</h3>
+              <div class="actions">
+                <button class="btn-ghost" onclick="copyEl('m2-json-output')">Copy</button>
+                <button class="btn-ghost" onclick="dlEl('slides.json','m2-json-output')">Tải .json</button>
+              </div>
+            </div>
+            <pre class="output-box empty" id="m2-json-output">JSON slide sẽ hiện ở đây...</pre>
+          </div>
+          <div class="output-col">
+            <div class="output-col-head">
+              <h3>kich_ban_doc.txt</h3>
+              <div class="actions">
+                <button class="btn-ghost" onclick="copyEl('m2-script-output')">Copy</button>
+                <button class="btn-ghost" onclick="dlEl('kich_ban_doc.txt','m2-script-output')">Tải .txt</button>
+              </div>
+            </div>
+            <button class="btn-red" id="m2-gen-script-btn" disabled>Bước 2 — Sinh Voice-over</button>
+            <button class="btn-orange" id="m2-regen-script-btn" style="display:none;">Tạo lại kịch bản</button>
+            <pre class="output-box empty" id="m2-script-output">Hoàn tất Bước 1 để kích hoạt...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODULE 3: STUDIO RENDER VIDEO ==================== -->
+  <div class="module-view" id="view-m3">
+    <div class="layout-full">
+      <div class="ctrl-panel">
+        <div class="title-banner"><h2 class="mod-title">STUDIO ENGINE V17.3</h2></div>
+        <div class="input-group">
+          <label>1. Nền tổng thể (Tuỳ chọn)</label>
+          <input type="file" id="m3-bg-upload" accept="image/*">
+        </div>
+        <div class="input-group">
+          <label>1b. Nền trang Intro (Tuỳ chọn)</label>
+          <input type="file" id="m3-intro-bg-upload" accept="image/*">
+        </div>
+        <div class="input-group">
+          <label>2. Logo Góc (Tuỳ chọn)</label>
+          <input type="file" id="m3-logo-upload" accept="image/*">
+        </div>
+        <div class="input-group">
+          <label>3. Ngày tháng & Địa điểm</label>
+          <input type="text" id="m3-date-input" value="18/07/2026" placeholder="DD/MM/YYYY">
+          <input type="text" id="m3-location-input" value="TP. Hồ Chí Minh" placeholder="VD: TP. Hà Nội, TP. Hồ Chí Minh...">
+        </div>
+        <div class="input-group">
+          <label>3b. Viettel AI (Text to Speech)</label>
+          <input type="text" id="m3-viettel-endpoint" value="https://viettelai.vn/tts/speech_synthesis" placeholder="Endpoint API">
+          <input type="text" id="m3-viettel-token" placeholder="Token API Viettel AI...">
+          <div class="tts-config-row">
+            <select id="m3-viettel-voice">
+              <option value="hn-quynhanh">Quỳnh Anh — Nữ miền Bắc</option>
+              <option value="hcm-diemmy">Diễm My — Nữ miền Nam</option>
+              <option value="hn-thanhha">Thanh Hà — Nữ miền Bắc</option>
+              <option value="hcm-phuongly">Phương Ly — Nữ miền Nam</option>
+              <option value="hn-thanhtung">Thanh Tùng — Nam miền Bắc</option>
+              <option value="hcm-minhquan">Minh Quân — Nam miền Nam</option>
+              <option value="hn-namkhanh">Nam Khánh — Nam miền Bắc</option>
+            </select>
+            <input type="number" id="m3-viettel-speed" value="1.0" step="0.1" min="0.5" max="2.0" title="Tốc độ đọc">
+          </div>
+          <input type="text" id="m3-viettel-voice-custom" placeholder="Nhập tay mã giọng khác">
+          <button type="button" class="btn-ghost" id="m3-load-voices-btn">Tải danh sách giọng</button>
+          <p class="tts-hint">Token, endpoint được lưu trong localStorage để lần sau không nhập lại.</p>
+        </div>
+        <div class="input-group">
+          <label>4. Dữ liệu JSON</label>
+          <p style="font-size:.76rem;color:#888;margin-bottom:-4px;">* Bo cục tự khoá bằng dấu * để có màu xanh. VD: *500 nghìn*</p>
+          <textarea id="m3-json-input" style="height:160px;font-family:monospace;color:#00ffcc;">[]</textarea>
+        </div>
+        <button id="m3-render-btn">CẬP NHẬT JSON & TẠO TRANG</button>
+        <div class="input-group">
+          <label>5. Assets: Âm thanh & Ảnh</label>
+          <button id="m3-tts-all-btn" class="btn-orange">TẠO GIỌNG ĐỌC AI CHO TẤT CẢ</button>
+          <div class="slides-list" id="m3-slides-list-box"></div>
+        </div>
+        <div id="m3-status" class="status-text">Sẵn sàng</div>
+        <button class="btn-red" id="m3-start-btn">XUẤT VIDEO TIKTOK</button>
+      </div>
+      <div class="preview-area">
+        <canvas id="m3-videoCanvas" width="1080" height="1920"></canvas>
+        <div class="preview-controls-bar" id="m3-preview-controls-bar" style="display:none;">
+          <button onclick="M3.changePreviewSlide(-1)">&#9664; Trước</button>
+          <span class="preview-page-info" id="m3-preview-page-info">Trang 1 / 1</span>
+          <button onclick="M3.changePreviewSlide(1)">Sau &#9654;</button>
+          <button onclick="M3.playCurrentPreviewAudio()">&#128266; Nghe Voice</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-content -->
+
+<!-- Script Modal (shared for both M3 and Auto Step 3) -->
+<div class="script-modal-overlay" id="script-modal-overlay" onclick="if(event.target===this)M3.closeScriptEditor()">
+  <div class="script-modal-panel">
+    <div class="script-modal-header">
+      <h3 id="script-modal-title">Kich ban doc</h3>
+      <button class="script-modal-close" onclick="M3.closeScriptEditor()">Dong</button>
+    </div>
+    <p class="script-modal-hint">Van ban nay chi dung de tao giong doc AI (voice-over), khong hien thi len video.</p>
+    <textarea id="script-textarea" placeholder="Nhập nội dung lời đọc cho slide này..."></textarea>
+    <div class="script-modal-footer">
+      <button id="script-reset-btn" onclick="M3.resetScriptToSlideContent()">Lay lai noi dung slide</button>
+      <button id="script-save-btn" onclick="M3.saveScriptEditor()">Luu kich ban</button>
+    </div>
+  </div>
+</div>
+
+<!-- FFmpeg Loading Overlay (shared) -->
+<div class="ffmpeg-loading-overlay" id="ffmpeg-loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Đang xử lý và chuyển đổi video sang MP4...</div>
+  <div class="loading-sub">Vui long doi, qua trinh co the mat vai phut.</div>
+  <div class="ffmpeg-progress-bar"><div class="fill" id="ffmpeg-progress-fill"></div></div>
+  <div class="ffmpeg-progress-pct" id="ffmpeg-progress-pct">0%</div>
+</div>
+
+<script>
+// ============================================================
+// GLOBAL UTILITIES
+// ============================================================
+const $ = id => document.getElementById(id);
+function copyEl(id){ navigator.clipboard.writeText($(id).textContent).catch(()=>{const t=document.createElement('textarea');t.value=$(id).textContent;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);}); }
+function dlEl(fn,id){const b=new Blob([$(id).textContent],{type:'text/plain;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=fn;a.click();URL.revokeObjectURL(u);}
+
+function copyText(text){navigator.clipboard.writeText(text).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);});}
+function downloadText(filename,text){const blob=new Blob([text],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
+
+function wordCount(str){return(str||'').trim().split(/\s+/).filter(Boolean).length;}
+
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+window.AppFlowState = {
+  step1: { scriptText: '', sourceText: '', topic: '', provider: '', model: '', apiKey: '' },
+  step2: { slidesJson: null, scriptText: '', topic: '', sourceText: '', provider: '', model: '', apiKey: '' },
+  step3: { slidesJson: null }
+};
+
+// ============================================================
+// MODEL CONFIGS
+// ============================================================
+const GROQ_MODELS = [
+  {value:'llama-3.3-70b-versatile',label:'llama-3.3-70b-versatile (Nhanh, thông minh)'},
+  {value:'gemma2-9b-it',label:'gemma2-9b-it (Google on Groq)'},
+  {value:'mixtral-8x7b-32768',label:'mixtral-8x7b-32768'},
+  {value:'custom',label:'Nhap ten model khac...'}
+];
+const GEMINI_MODELS = [
+  {value:'gemini-3.5-flash',label:'Gemini 3.5 Flash (Moi nhat)'},
+  {value:'gemini-2.5-flash',label:'Gemini 2.5 Flash (Nhanh)'},
+  {value:'gemini-2.5-pro',label:'Gemini 2.5 Pro'},
+  {value:'gemini-2.0-flash',label:'Gemini 2.0 Flash (Cu)'},
+  {value:'custom',label:'Nhap ten model khac...'}
+];
+function populateModels(provider, modelSelectId){
+  const models = provider==='gemini' ? GEMINI_MODELS : GROQ_MODELS;
+  const sel = $(modelSelectId);
+  if(!sel) return;
+  sel.innerHTML = models.map(m=>`<option value="${m.value}">${m.label}</option>`).join('');
+}
+function getModelVal(modelSelectId,customId){
+  const sel=$(modelSelectId);
+  if(!sel) return '';
+  return sel.value==='custom' ? ($(customId)?$(customId).value.trim():'') : sel.value;
+}
+
+// ============================================================
+// TAB / MODULE SWITCHING
+// ============================================================
+let currentModule = 'auto';
+function switchModule(mod){
+  currentModule = mod;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('nav-'+mod).classList.add('active');
+  document.querySelectorAll('.module-view').forEach(v=>v.classList.remove('active'));
+  $('view-'+mod).classList.add('active');
+}
+
+// ============================================================
+// SHARED FILE READING
+// ============================================================
+function setupFileDrop(dropId,inputId,targetTextareaId,logFn){
+  const drop=$(dropId),input=$(inputId),target=$(targetTextareaId);
+  if(!drop||!input) return;
+  drop.addEventListener('click',()=>input.click());
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='var(--accent)';});
+  drop.addEventListener('dragleave',()=>{drop.style.borderColor='#444';});
+  drop.addEventListener('drop',e=>{
+    e.preventDefault();drop.style.borderColor='#444';
+    if(e.dataTransfer.files.length) handleFileRead(e.dataTransfer.files[0],drop,target,logFn);
+  });
+  input.addEventListener('change',e=>{if(e.target.files.length)handleFileRead(e.target.files[0],drop,target,logFn);});
+}
+async function handleFileRead(file,drop,target,logFn){
+  drop.textContent='Đang đọc: '+file.name;
+  try{
+    if(file.name.toLowerCase().endsWith('.docx')){
+      const buf=await file.arrayBuffer();
+      const result=await mammoth.extractRawText({arrayBuffer:buf});
+      target.value=result.value;
+    } else {
+      target.value=await file.text();
+    }
+    drop.textContent='✓ Đã nạp: '+file.name+' (bấm để đổi)';
+    if(logFn) logFn('Đã đọc file: '+file.name,'ok');
+  }catch(err){
+    drop.textContent='📄 Kéo thả hoặc bấm để tải file .docx / .txt';
+    if(logFn) logFn('Lỗi đọc file: '+err.message,'err');
+  }
+}
+
+// ============================================================
+// SHARED LOG FUNCTION
+// ============================================================
+function makeLogFn(logBoxId){
+  return function(msg,cls){
+    const box=$(logBoxId); if(!box)return;
+    const line=document.createElement('div');
+    line.className='log-line '+(cls?'log-'+cls:'');
+    line.textContent=msg;
+    box.appendChild(line);
+    box.scrollTop=box.scrollHeight;
+  };
+}
+
+// ============================================================
+// SHARED API CALLS
+// ============================================================
+async function callGroq(apiKey,model,prompt,isJson){
+  const body={model,messages:[{role:'user',content:prompt}],temperature:0.85,max_tokens:8192};
+  if(isJson) body.response_format={type:'json_object'};
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(body)
+  });
+  if(!res.ok){const e=await res.text();throw new Error('Groq HTTP '+res.status+': '+e.slice(0,300));}
+  const data=await res.json();
+  if(!data.choices||!data.choices[0])throw new Error('Groq: khong co ket qua.');
+  return data.choices[0].message.content;
+}
+async function callGemini(apiKey,model,prompt,isJson){
+  const genConfig={temperature:0.85,maxOutputTokens:8192};
+  if(isJson) genConfig.responseMimeType='application/json';
+  const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:genConfig})
+  });
+  if(!res.ok){const e=await res.text();throw new Error('Gemini HTTP '+res.status+': '+e.slice(0,300));}
+  const data=await res.json();
+  if(!data.candidates||!data.candidates[0]||!data.candidates[0].content)throw new Error('Gemini: khong co ket qua. '+(data.error?.message||''));
+  return data.candidates[0].content.parts[0].text;
+}
+async function callAI(provider,apiKey,model,prompt,isJson){
+  if(provider==='gemini')return await callGemini(apiKey,model,prompt,isJson);
+  return await callGroq(apiKey,model,prompt,isJson);
+}
+
+// ============================================================
+// SHARED JSON REPAIR
+// ============================================================
+function stripMarkdownJson(raw){
+  let s=(raw||'').trim();
+  s=s.replace(/^```(?:json)?\s*\n?/i,'').replace(/\n?\s*```\s*$/i,'');
+  s=s.replace(/^[\s\S]*?(\{)/,'$1');
+  const lastClose=Math.max(s.lastIndexOf('}'),s.lastIndexOf(']'));
+  if(lastClose>=0)s=s.slice(0,lastClose+1);
+  return s.trim();
+}
+function repairTruncatedJson(raw){
+  let s=stripMarkdownJson(raw);
+  try{JSON.parse(s);return s;}catch(e){}
+  let fixed=s;
+  let inString=false,lastQuoteIdx=-1;
+  for(let i=0;i<fixed.length;i++){
+    if(fixed[i]==='"'){let bs=0;for(let j=i-1;j>=0&&fixed[j]==='\\';j--)bs++;if(bs%2===0)inString=!inString;if(!inString)lastQuoteIdx=i;}
+  }
+  if(inString&&lastQuoteIdx>=0)fixed=fixed.slice(0,lastQuoteIdx+1);
+  fixed=fixed.replace(/,\s*$/,'').replace(/:\s*$/,'').replace(/,\s*"[^"]*$/,'').replace(/"[^"]*$/,'');
+  const opens=(fixed.match(/{/g)||[]).length,closes=(fixed.match(/}/g)||[]).length;
+  const aO=(fixed.match(/\[/g)||[]).length,aC=(fixed.match(/]/g)||[]).length;
+  for(let i=0;i<aO-aC;i++)fixed+=']';for(let i=0;i<opens-closes;i++)fixed+='}';
+  try{JSON.parse(fixed);return fixed;}catch(e){}
+  throw new Error('Khong the repair JSON. Can giam so slide.');
+}
+
+// ============================================================
+// CLEAN MARKDOWN UTILITY
+// ============================================================
+function cleanMarkdown(text){
+  let s=text;
+  s=s.replace(/^#{1,6}\s+/gm,'');
+  s=s.replace(/\*{1,3}([^*]+)\*{1,3}/g,'$1');
+  s=s.replace(/_{1,3}([^_]+)_{1,3}/g,'$1');
+  s=s.replace(/^\s*[-*+]\s+/gm,'');
+  s=s.replace(/^\s*>\s+/gm,'');
+  s=s.replace(/\n{3,}/g,'\n\n');
+  return s.trim();
+}
+
+// ============================================================
+// MODULE 1: TẠO KỊCH BẢN
+// ============================================================
+const M1 = (() => {
+  const log = makeLogFn('m1-log-box');
+
+  function buildPrompt(sourceText,bodySections,extraHint,topic){
+    const topicLine=topic?`[CHU DE CHINH: "${topic}"]\n`:'';
+    const introTopic=topic?`Lam noi bat chu de "${topic}" trong cau nghich ly.`:'';
+    const sectionGuide=bodySections==='4'?'Chia noi dung thanh 4 y chinh, trinh bay theo van noi cuon hut:':'Chia noi dung thanh 3 y chinh, trinh bay theo van noi cuon hut:';
+    const sectionList=bodySections==='4'
+      ?`- Y 1: [Ten y chinh] — [Giai thich ngan gon]\n- Y 2: [Ten y chinh] — [Giai thich ngan gon]\n- Y 3: [Ten y chinh] — [Giai thich ngan gon]\n- Y 4: [Ten y chinh] — [Giai thich ngan gon]`
+      :`- Y 1: [Ten y chinh] — [Giai thich ngan gon]\n- Y 2: [Ten y chinh] — [Giai thich ngan gon]\n- Y 3: [Ten y chinh] — [Giai thich ngan gon]`;
+    return `Ban la Content Creator & Chuyen gia Tai chinh - Kinh te vi mo hang dau tren TikTok/Shorts.
+Nhiem vu: chuyen doi bai viet tho thanh kich ban video ngan (duoi 60s) cuon hut, BAM SAT 100% NOI DUNG GOC.
+Dai tu nhan xung: Toi - Ban (hoac Anh em minh).
+
+QUY TAC SONG CON:
+1. KHONG TU BIA VI DU: Tuyet doi KHONG tu sang tao vi du, an du neu bai goc khong nham toi.
+2. TON TRONG BAN GOC: Chi trich xuat thong tin, du lieu, luan luan tu "BAI VIET GOC".
+3. NHIP DO TIKTOK: Cat cau ngan. Bo mao tu thua. Chuyen y nhanh gon.
+4. NGON NGU DOI THUONG: Giai thich tu vung bang ngon ngu binh dan.
+
+DINH DANG:
+[BEGIN_INTRO]
+- Tieu de Intro: Viet HOA ten chu de "${topic||'CHU DE'}"
+- Cau 1: "Ai cung muon tien de ra tien. But..." (Dien tiep nghich ly tu bai goc). ${introTopic}
+- Cau 2: Cau hoi xoau sau vao van de chinh.
+[END_INTRO]
+[BEGIN_BODY]
+${sectionGuide}
+${sectionList}
+[END_BODY]
+[BEGIN_OUTRO]
+- Tom tat gia tri cot loi trong 1 cau chat.
+- Cau chot Call-To-Action: "Theo quan diem cua ban, [Cau hoi mo]. De lai y kien duoi phan binh luan."
+[END_OUTRO]
+${topicLine}${extraHint?`GOI Y TU DAO DIEN: ${extraHint}\n\n`:''}BAI VIET GOC:
+"""
+${sourceText}
+"""
+Tien hanh viet NGAY TU [BEGIN_INTRO].`;
+  }
+
+  function getInputValues(){
+    return{
+      topic:$('m1-topic').value.trim(),
+      sourceText:$('m1-source-text').value.trim(),
+      apiKey:$('m1-api-key').value.trim(),
+      provider:$('m1-provider-select').value,
+      model:getModelVal('m1-model-select','m1-model-custom'),
+      bodySections:$('m1-body-sections').value,
+      extraHint:$('m1-extra-hint').value.trim()
+    };
+  }
+
+  async function runGenerate(isRegen){
+    const{topic,sourceText,apiKey,provider,model,bodySections,extraHint}=getInputValues();
+    if(!sourceText){alert('Vui long cung cap noi dung bai viet.');return;}
+    if(!apiKey){alert('Vui long nhap API Key.');return;}
+    if(!model){alert('Hay chon model.');return;}
+    $('m1-generate-btn').disabled=true;$('m1-regen-btn').disabled=true;$('m1-clean-btn').disabled=true;
+    $('m1-status-msg').textContent='⏳ Đang tạo kịch bản...';
+    $('m1-stat-pills').innerHTML='';
+    $('m1-log-box').innerHTML='';
+    log('KHOI CHAY — '+provider.toUpperCase()+' / '+model+(topic?' | Chu de: '+topic:''),'info');
+    const rawOut=$('m1-raw-output'),cleanOut=$('m1-clean-output');
+    rawOut.classList.add('empty');rawOut.textContent='Kich ban se hien o day...';
+    cleanOut.classList.add('empty');cleanOut.textContent='Sau khi don sach se hien o day...';
+    try{
+      const prompt=buildPrompt(sourceText,bodySections,extraHint,topic);
+      const scriptText=await callAI(provider,apiKey,model,prompt,false);
+      if(!scriptText||scriptText.trim().length<50)throw new Error('Ket qua qua ngan.');
+      _lastRaw=scriptText;_lastClean=cleanMarkdown(scriptText);
+      rawOut.classList.remove('empty');rawOut.textContent=scriptText;
+      const wc=scriptText.trim().split(/\s+/).length;
+      $('m1-stat-pills').innerHTML='<span class="pill">1 lan goi</span><span class="pill"><b>'+wc+'</b> tu</span>';
+      $('m1-status-msg').textContent='✓ Kich ban da tao thanh cong!';
+      $('m1-clean-btn').disabled=false;$('m1-regen-btn').style.display='block';
+      log('Hoan tat. Kich ban san sang.','ok');
+    }catch(err){
+      $('m1-status-msg').textContent='✗ Loi: '+err.message;
+      log('Loi: '+err.message,'err');
+    }finally{$('m1-generate-btn').disabled=false;$('m1-regen-btn').disabled=false;}
+  }
+
+  let _lastRaw='',_lastClean='';
+
+  function init(){
+    populateModels($('m1-provider-select').value,'m1-model-select');
+    setupFileDrop('m1-file-drop','m1-file-input','m1-source-text',log);
+    $('m1-provider-select').addEventListener('change',()=>populateModels($('m1-provider-select').value,'m1-model-select'));
+    $('m1-generate-btn').addEventListener('click',()=>runGenerate(false));
+    $('m1-regen-btn').addEventListener('click',()=>runGenerate(true));
+    $('m1-clean-btn').addEventListener('click',()=>{$('m1-clean-output').classList.remove('empty');$('m1-clean-output').textContent=_lastClean;log('Da don sach markdown.','ok');});
+  }
+  return{init,getInputValues};
+})();
+
+// ============================================================
+// MODULE 2: TẠO SLIDES JSON & VOICE
+// ============================================================
+const M2 = (() => {
+  const log = makeLogFn('m2-log-box');
+
+  function buildPrompt(sourceText,minSlides,topic){
+    const introTitle=topic?topic.toUpperCase():'TIEU DE';
+    return `Output ONLY raw JSON. No markdown, no explanation.
+Schema:
+{"slides":[{"type":"intro|concept|chat|chart|motion_graphic|outro","title":"IN HOA","content":"short text with *highlighted keywords*","duration":5000,"layout":"center|split_screen|bottom_heavy","visual_assets":{"bg_color":"#hex","chat_messages":[{"sender":"user|admin","text":"..."}],"chart_data":[1,2,3],"graphic_type":"radar|sine_wave|car_driving|math_parabola"}}]}
+Rules:
+- First slide=intro: title="${introTitle}". Last slide=outro. Alternate chat/chart/motion_graphic/concept between.
+- Minimum ${minSlides} slides. duration>=5000ms.
+- IMPORTANT: Wrap important keywords with *asterisks* for cyan highlight. Only 1-2 key terms per slide.
+- chat: require chat_messages (2-6 msgs). chart: require chart_data (4-5 numbers). motion_graphic: require graphic_type.
+Source content:
+"""
+${sourceText}
+"""
+Output the JSON now.`;
+  }
+
+  function buildScriptPrompt(sourceText,slidesJson,minWords){
+    return `Ban la bien tap vien voice-over cho video ngan tai Viet Nam.
+NHIEM VUE: Viet loi thuyet minh cho TUNG slide.
+NOI DUNG GOC:
+"""
+${sourceText}
+"""
+KHUNG SLIDE (JSON):
+"""
+${JSON.stringify(slidesJson,null,2)}
+"""
+YEU CAU: Than thien, xung "minh", goi nguoi xem la "ban". Moi slide toi thieu ${minWords} tu.
+DAU RA: Text thuan (KHONG markdown):
+--- SLIDE 1: [TIEU DE] ({TYPE}) ---
+[Loi thoai...]
+(... tuong tat cho tat ca slide)`;
+  }
+
+  function validate(parsed,minSlides){
+    const problems=[];
+    if(!parsed||!Array.isArray(parsed.slides)){problems.push('Khong co cau truc "slides" hop le.');return problems;}
+    if(parsed.slides.length<minSlides)problems.push('Chi '+parsed.slides.length+' slide, can '+minSlides+'.');
+    const validTypes=['intro','concept','chat','chart','motion_graphic','outro'];
+    if(parsed.slides[0]&&parsed.slides[0].type!=='intro')problems.push('Slide dau phai la intro.');
+    const last=parsed.slides[parsed.slides.length-1];
+    if(last&&last.type!=='outro')problems.push('Slide cuoi phai la outro.');
+    return problems;
+  }
+
+  function estimateDuration(content){return Math.max(5000,Math.min(4000+wordCount(content)*400,10000));}
+
+  function buildSlidesJson(parsed){
+    return parsed.slides.map(s=>{
+      const content=s.content||s.text_content||'';
+      const slide={type:s.type||'concept',title:s.title||'',content,duration:s.duration||(s.type==='intro'?5000:estimateDuration(content)),layout:s.layout||'center',visual_assets:{}};
+      const va=s.visual_assets||{};
+      if(s.type==='chat'&&Array.isArray(va.chat_messages))slide.visual_assets.chat_messages=va.chat_messages;
+      if(s.type==='chart'&&Array.isArray(va.chart_data))slide.visual_assets.chart_data=va.chart_data;
+      if(s.type==='motion_graphic'&&va.graphic_type)slide.visual_assets.graphic_type=va.graphic_type;
+      if(va.bg_color)slide.visual_assets.bg_color=va.bg_color;
+      return slide;
+    });
+  }
+
+  let _lastSlidesJson=null,_lastSourceText='',_lastApiKey='',_lastProvider='',_lastModel='',_lastMinWords=60;
+
+  function getInputValues(){
+    return{
+      topic:$('m2-topic').value.trim(),
+      sourceText:$('m2-source-text').value.trim(),
+      apiKey:$('m2-api-key').value.trim(),
+      provider:$('m2-provider-select').value,
+      model:getModelVal('m2-model-select','m2-model-custom'),
+      minSlides:parseInt($('m2-min-slides').value,10)||8,
+      minWords:parseInt($('m2-min-words').value,10)||60
+    };
+  }
+
+  async function runStep1(isRegen){
+    const{topic,sourceText,apiKey,provider,model,minSlides,minWords}=getInputValues();
+    if(!sourceText){alert('Vui long cung cap noi dung goc.');return;}
+    if(!apiKey){alert('Vui long nhap API Key.');return;}
+    if(!model){alert('Hay chon model.');return;}
+    $('m2-generate-btn').disabled=true;$('m2-regen-btn').disabled=true;
+    $('m2-gen-script-btn').disabled=true;$('m2-regen-script-btn').disabled=true;
+    $('m2-status-msg').textContent='⏳ Bước 1: Đang tạo khung sườn...';
+    $('m2-stat-pills').innerHTML='';$('m2-log-box').innerHTML='';
+    log('BUOC 1 — '+provider.toUpperCase()+' / '+model+(topic?' | Chu de: '+topic:''),'info');
+    const scriptOut=$('m2-script-output');
+    scriptOut.classList.add('empty');scriptOut.textContent='Hoan tat Buoc 1 de kich hoat...';
+    try{
+      const prompt=buildPrompt(sourceText,minSlides,topic);
+      const raw=await callAI(provider,apiKey,model,prompt,true);
+      let parsed;
+      try{parsed=JSON.parse(repairTruncatedJson(raw));}catch(e){throw new Error('JSON khong hop le: '+e.message);}
+      const problems=validate(parsed,minSlides);
+      if(problems.length>0)problems.forEach(p=>log('⚠ '+p,'warn'));
+      const slidesJson=buildSlidesJson(parsed);
+      $('m2-json-output').classList.remove('empty');
+      $('m2-json-output').textContent=JSON.stringify(slidesJson,null,2);
+      _lastSlidesJson=slidesJson;_lastSourceText=sourceText;_lastApiKey=apiKey;_lastProvider=provider;_lastModel=model;_lastMinWords=minWords;
+      $('m2-stat-pills').innerHTML='<span class="pill"><b>'+slidesJson.length+'</b> slide</span><span class="pill">1 lan goi</span>';
+      $('m2-status-msg').textContent='✓ Buoc 1 hoan tat!';
+      $('m2-gen-script-btn').disabled=false;$('m2-regen-btn').style.display='block';
+      log('Buoc 1 xong. JSON da tao.','ok');
+    }catch(err){
+      $('m2-status-msg').textContent='✗ Loi: '+err.message;
+      log('Loi: '+err.message,'err');
+    }finally{$('m2-generate-btn').disabled=false;$('m2-regen-btn').disabled=false;}
+  }
+
+  async function runStep2(isRegen){
+    if(!_lastSlidesJson){alert('Hoan tat Buoc 1 truoc.');return;}
+    $('m2-generate-btn').disabled=true;$('m2-gen-script-btn').disabled=true;
+    $('m2-regen-btn').disabled=true;$('m2-regen-script-btn').disabled=true;
+    $('m2-status-msg').textContent='⏳ Bước 2: Đang sinh voice-over...';
+    const scriptOut=$('m2-script-output');
+    scriptOut.classList.remove('empty');scriptOut.textContent='Đang gọi API...';
+    log('BUOC 2 — Sinh voice-over.','info');
+    try{
+      const prompt=buildScriptPrompt(_lastSourceText,_lastSlidesJson,_lastMinWords);
+      const scriptText=await callAI(_lastProvider,_lastApiKey,_lastModel,prompt,false);
+      if(!scriptText||scriptText.trim().length<50)throw new Error('Ket qua qua ngan.');
+      scriptOut.textContent=scriptText;
+      $('m2-stat-pills').innerHTML='<span class="pill"><b>'+_lastSlidesJson.length+'</b> slide</span><span class="pill">1 lan goi</span>';
+      $('m2-status-msg').textContent='✓ Hoan tat ca 2 buoc!';
+      $('m2-regen-script-btn').style.display='block';
+      log('Buoc 2 xong.','ok');
+    }catch(err){
+      $('m2-status-msg').textContent='✗ Buoc 2 loi: '+err.message;
+      scriptOut.textContent='Loi: '+err.message;
+      log('Loi: '+err.message,'err');
+    }finally{$('m2-generate-btn').disabled=false;$('m2-gen-script-btn').disabled=false;$('m2-regen-btn').disabled=false;$('m2-regen-script-btn').disabled=false;}
+  }
+
+  function init(){
+    populateModels($('m2-provider-select').value,'m2-model-select');
+    setupFileDrop('m2-file-drop','m2-file-input','m2-source-text',log);
+    $('m2-provider-select').addEventListener('change',()=>populateModels($('m2-provider-select').value,'m2-model-select'));
+    $('m2-generate-btn').addEventListener('click',()=>runStep1(false));
+    $('m2-regen-btn').addEventListener('click',()=>runStep1(true));
+    $('m2-gen-script-btn').addEventListener('click',()=>runStep2(false));
+    $('m2-regen-script-btn').addEventListener('click',()=>runStep2(true));
+  }
+  return{init,getInputValues};
+})();
+
+// ============================================================
+// MODULE 3: STUDIO RENDER VIDEO (Shared for both standalone & wizard)
+// ============================================================
+const M3 = (() => {
+  let prefix = 'm3'; // default, changed to 'w3' for wizard
+
+  function setPrefix(p){ prefix = p; }
+
+  function el(id){ return $(prefix + '-' + id); }
+  function elId(id){ return prefix + '-' + id; }
+
+  const canvas = () => $(prefix + '-videoCanvas');
+  let ctx;
+
+  let slidesData = [];
+  let mediaRecorder;
+  let recordedChunks = [];
+  let bgImage = new Image();
+  let logoImage = new Image();
+  let introBgImage = new Image();
+  let bgImageLoaded = false, logoImageLoaded = false, introBgImageLoaded = false;
+  let currentSlideIdx = 0, previewSlideIdx = 0, slideStartTime = null;
+  let isRecording = false, animationFrameId = null;
+  let micStream, segmentRecorder, audioChunks = [];
+  let slideAudioRecords = [];
+  let slideNarrationScripts = [];
+  let scriptEditingIdx = null, activeRecordIdx = null, currentPreviewAudio = null;
+
+  const COLORS = { bgDark:'#080d14', cardBg:'rgba(15,23,30,0.85)', cardBorder:'rgba(0,255,204,0.4)', textNormal:'#e2e8f0', textHighlight:'#00ffcc', titlePrimary:'#c67cff' };
+  const ACCENT_PALETTE = [
+    {border:'rgba(0,255,204,0.45)',glow:'#00ffcc',title:'#c67cff',wash:'rgba(0,255,204,0.10)'},
+    {border:'rgba(255,200,87,0.45)',glow:'#ffc857',title:'#ffd77a',wash:'rgba(255,200,87,0.10)'},
+    {border:'rgba(255,92,168,0.45)',glow:'#ff5ca8',title:'#ff8fc7',wash:'rgba(255,92,168,0.10)'}
+  ];
+  const TRANSITION_MS = 500;
+
+  // File uploads
+  function setupUploads(){
+    const bgEl = el('bg-upload'), introEl = el('intro-bg-upload'), logoEl = el('logo-upload');
+    if(bgEl) bgEl.addEventListener('change', function(e){
+      if(e.target.files&&e.target.files[0]){
+        bgImageLoaded=false;
+        const reader=new FileReader();
+        reader.onload=function(ev){bgImage.src=ev.target.result;bgImage.onload=()=>{bgImageLoaded=true;drawStaticPreview();};};
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+    if(introEl) introEl.addEventListener('change', function(e){
+      if(e.target.files&&e.target.files[0]){
+        introBgImageLoaded=false;
+        const reader=new FileReader();
+        reader.onload=function(ev){introBgImage.src=ev.target.result;introBgImage.onload=()=>{introBgImageLoaded=true;drawStaticPreview();};};
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+    if(logoEl) logoEl.addEventListener('change', function(e){
+      if(e.target.files&&e.target.files[0]){
+        logoImageLoaded=false;
+        const reader=new FileReader();
+        reader.onload=function(ev){logoImage.src=ev.target.result;logoImage.onload=()=>{logoImageLoaded=true;drawStaticPreview();};};
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+    const dateEl = el('date-input');
+    if(dateEl) dateEl.addEventListener('input', drawStaticPreview);
+  }
+
+  // Rich text processing
+  function processRichText(c, text, x, y, maxWidth, lineHeight, action, highlightColor){
+    if(!text) return 0;
+    highlightColor=highlightColor||COLORS.textHighlight;
+    c.font='700 56px "Be Vietnam Pro",sans-serif';
+    c.textAlign='left';
+    let spaceWidth=c.measureText(' ').width;
+    if(!spaceWidth||spaceWidth<=0)spaceWidth=15;
+    let tokens=[],currentWord="",isHighlight=false;
+    for(let i=0;i<text.length;i++){
+      let char=text[i];
+      if(char==='*'){if(currentWord.length>0){tokens.push({text:currentWord,isHighlight:isHighlight,isSpace:false});currentWord="";}isHighlight=!isHighlight;}
+      else if(char===' '||char==='\n'||char==='\t'||char==='\u00A0'){if(currentWord.length>0){tokens.push({text:currentWord,isHighlight:isHighlight,isSpace:false});currentWord="";}tokens.push({text:' ',isHighlight:false,isSpace:true});}
+      else{currentWord+=char;}
+    }
+    if(currentWord.length>0)tokens.push({text:currentWord,isHighlight:isHighlight,isSpace:false});
+    let lines=[],currentLine=[],currentLineWidth=0;
+    for(let i=0;i<tokens.length;i++){
+      let token=tokens[i];
+      if(token.isSpace){if(currentLine.length>0){currentLine.push({...token,width:spaceWidth});currentLineWidth+=spaceWidth;}}
+      else{
+        let wordWidth=c.measureText(token.text).width;
+        if(currentLineWidth+wordWidth>maxWidth&&currentLine.length>0){
+          while(currentLine.length>0&&currentLine[currentLine.length-1].isSpace){let popped=currentLine.pop();currentLineWidth-=popped.width;}
+          lines.push({words:currentLine,width:currentLineWidth});
+          currentLine=[{...token,width:wordWidth}];currentLineWidth=wordWidth;
+        }else{currentLine.push({...token,width:wordWidth});currentLineWidth+=wordWidth;}
+      }
+    }
+    while(currentLine.length>0&&currentLine[currentLine.length-1].isSpace){let popped=currentLine.pop();currentLineWidth-=popped.width;}
+    if(currentLine.length>0)lines.push({words:currentLine,width:currentLineWidth});
+    if(action==='measure')return lines.length*lineHeight;
+    let currentY=y;
+    for(let line of lines){
+      let currentX=x-(line.width/2);
+      for(let w of line.words){
+        if(w.isSpace){currentX+=w.width;continue;}
+        if(w.isHighlight){c.fillStyle=highlightColor;c.shadowColor=highlightColor;c.shadowBlur=15;}
+        else{c.fillStyle=COLORS.textNormal;c.shadowBlur=0;}
+        c.fillText(w.text,currentX,currentY);currentX+=w.width;
+      }
+      currentY+=lineHeight;
+    }
+  }
+  function getRichTextHeight(c,text,maxWidth,lineHeight){return processRichText(c,text,0,0,maxWidth,lineHeight,'measure');}
+  function drawRichText(c,text,x,y,maxWidth,lineHeight,highlightColor){processRichText(c,text,x,y,maxWidth,lineHeight,'draw',highlightColor);}
+
+  function drawStaticPreview(){
+    if(isRecording) return;
+    syncDurationsFromUI();
+    if(slidesData.length===0) return;
+    renderFrame(previewSlideIdx,0);
+  }
+  function syncDurationsFromUI(){
+    slidesData.forEach((slide,idx)=>{
+      const input=$(elId('dur-input-'+idx));
+      if(input){slide.duration=parseInt(input.value)||5000;}
+    });
+  }
+
+  function buildSlidesListUI(){
+    let newData=[];
+    try{newData=JSON.parse(el('json-input').value);}catch(e){alert("JSON loi dinh dang!");return;}
+    const oldSlidesData=slidesData,oldAudioRecords=slideAudioRecords,oldScripts=slideNarrationScripts;
+    slidesData=newData.map((slide,idx)=>({
+      type:slide.type||'concept',title:slide.title||'',content:slide.content||'',
+      duration:typeof slide.duration==='number'?slide.duration:(oldSlidesData[idx]?.duration||5000),
+      layout:slide.layout||'center',visual_assets:slide.visual_assets||{},
+      imageObj:oldSlidesData[idx]?oldSlidesData[idx].imageObj:null,
+      illustration:slide.illustration||null,iconObj:null,iconQuery:null
+    }));
+    slideAudioRecords=newData.map((_,idx)=>oldAudioRecords[idx]||null);
+    slideNarrationScripts=newData.map((_,idx)=>oldScripts[idx]||'');
+    const listBox=el('slides-list-box');
+    listBox.innerHTML='';
+    slidesData.forEach((slide,idx)=>{
+      const card=document.createElement('div');card.className='slide-card';
+      const typeColors={intro:'#00ffcc',concept:'#c67cff',chat:'#00ccaa',chart:'#ffc857',motion_graphic:'#ff5ca8',outro:'#ffd77a'};
+      const typeColor=typeColors[slide.type]||'#888';
+      card.innerHTML=`
+        <div class="slide-card-header">
+          <span class="slide-card-title" style="color:${typeColor}">S.${idx+1} [${slide.type.toUpperCase()}] ${slide.title}</span>
+          <div class="slide-card-controls"><input type="number" id="${elId('dur-input-'+idx)}" value="${slide.duration}"> ms</div>
+        </div>
+        <div class="audio-actions">
+          <button id="${elId('tts-btn-'+idx)}" class="btn-tts" onclick="M3.generateTTSForSlide(${idx})">TTS AI</button>
+          <button class="btn-script" onclick="M3.openScriptEditor(${idx})">Kich ban doc</button>
+          <button id="${elId('rec-btn-'+idx)}" onclick="M3.toggleAudioRecord(${idx})">Thu</button>
+          <input type="file" id="${elId('audio-file-'+idx)}" accept="audio/*" style="display:none;" onchange="M3.handleAudioUpload(event,${idx})">
+          <button class="btn-upload" onclick="document.getElementById('${elId('audio-file-'+idx)}').click()">Tải Mp3</button>
+          <input type="file" id="${elId('img-file-'+idx)}" accept="image/*" style="display:none;" onchange="M3.handleSlideImageUpload(event,${idx})">
+          <button class="btn-img-upload" onclick="document.getElementById('${elId('img-file-'+idx)}').click()">Tải Ảnh</button>
+        </div>
+        <div class="status-labels">
+          <span id="${elId('script-status-'+idx)}" style="color:#888;font-size:.72rem;">${slideNarrationScripts[idx]&&slideNarrationScripts[idx].trim()?'✓ Có kịch bản đọc riêng':'Đang dùng nội dung slide để đọc'}</span>
+        </div>
+        <div class="status-labels">
+          <span class="audio-status" id="${elId('audio-status-'+idx)}">${slideAudioRecords[idx]?'✓ Đã nap Audio':'Chưa có Audio'}</span>
+          <span class="img-status" id="${elId('img-status-'+idx)}">${slide.imageObj?'✓ Đã có ảnh':'Chưa có ảnh'}</span>
+        </div>
+        <div class="status-labels">
+          <span style="color:#888;font-size:.72rem;" id="${elId('icon-status-'+idx)}">${slide.illustration&&slide.illustration.source==='icon'?'⏳ Đang tải icon...':'— Không có illustration —'}</span>
+        </div>`;
+      listBox.appendChild(card);
+    });
+    if(previewSlideIdx>=slidesData.length)previewSlideIdx=0;
+    const ctrlBar=el('preview-controls-bar');
+    if(ctrlBar) ctrlBar.style.display='flex';
+    const pageInfo=el('preview-page-info');
+    if(pageInfo) pageInfo.innerText='Trang '+(previewSlideIdx+1)+' / '+slidesData.length;
+    slidesData.forEach((slide,idx)=>{
+      if(slide.illustration&&slide.illustration.source==='icon'&&slide.illustration.query)loadIconForSlide(idx,slide.illustration.query);
+    });
+    drawStaticPreview();
+  }
+
+  async function loadIconForSlide(idx,query){
+    const statusLabel=$(elId('icon-status-'+idx));
+    try{
+      const hasPrefix=query.includes(':');
+      const iconName=hasPrefix?query:'lucide:'+query;
+      const[prefix,name]=iconName.split(':');
+      const url='https://api.iconify.design/'+prefix+'/'+name+'.svg?color=%2300ffcc';
+      const res=await fetch(url);
+      if(!res.ok)throw new Error('Khong tim thay icon: '+iconName);
+      const svgText=await res.text();
+      if(svgText.includes('404'))throw new Error('Icon khong ton tai: '+iconName);
+      const svgBlob=new Blob([svgText],{type:'image/svg+xml'});
+      const svgUrl=URL.createObjectURL(svgBlob);
+      const img=new Image();
+      img.onload=()=>{
+        if(!slidesData[idx])return;
+        slidesData[idx].iconObj=img;slidesData[idx].iconQuery=iconName;
+        if(statusLabel){statusLabel.innerText='✓ Icon: '+iconName;statusLabel.style.color='#00ffcc';}
+        drawStaticPreview();
+      };
+      img.onerror=()=>{if(statusLabel){statusLabel.innerText='✗ Lỗi tải icon: '+iconName;statusLabel.style.color='#ff4757';}};
+      img.src=svgUrl;
+    }catch(err){
+      if(statusLabel){statusLabel.innerText='✗ '+err.message;statusLabel.style.color='#ff4757';}
+    }
+  }
+
+  function changePreviewSlide(direction){
+    if(slidesData.length===0)return;
+    if(currentPreviewAudio){currentPreviewAudio.pause();currentPreviewAudio=null;}
+    previewSlideIdx+=direction;
+    if(previewSlideIdx<0)previewSlideIdx=slidesData.length-1;
+    if(previewSlideIdx>=slidesData.length)previewSlideIdx=0;
+    const pageInfo=el('preview-page-info');
+    if(pageInfo)pageInfo.innerText='Trang '+(previewSlideIdx+1)+' / '+slidesData.length;
+    drawStaticPreview();
+  }
+  function playCurrentPreviewAudio(){
+    if(slidesData.length===0)return;
+    if(currentPreviewAudio){currentPreviewAudio.pause();currentPreviewAudio=null;}
+    const trackUrl=slideAudioRecords[previewSlideIdx];
+    if(trackUrl){currentPreviewAudio=new Audio(trackUrl);currentPreviewAudio.play();}
+    else{alert('Slide '+(previewSlideIdx+1)+' chua co am thanh!');}
+  }
+
+  function handleSlideImageUpload(event,idx){
+    const file=event.target.files[0];if(!file)return;
+    const statusLabel=$(elId('img-status-'+idx));
+    statusLabel.innerText="⏳ Đang load...";statusLabel.style.color="#f39c12";
+    const imgUrl=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{slidesData[idx].imageObj=img;statusLabel.innerText="✓ Đã có ảnh";statusLabel.style.color="#00ffcc";drawStaticPreview();};
+    img.src=imgUrl;
+  }
+  function handleAudioUpload(event,idx){
+    const file=event.target.files[0];if(!file)return;
+    const statusLabel=$(elId('audio-status-'+idx));
+    statusLabel.style.color="#ffa500";statusLabel.innerText="⏳ Đang load...";
+    const audioUrl=URL.createObjectURL(file);
+    const tempAudio=new Audio(audioUrl);
+    tempAudio.addEventListener('loadedmetadata',()=>{
+      let durationMs=Math.round(tempAudio.duration*1000)+400;
+      const durInput=$(elId('dur-input-'+idx));
+      if(durInput)durInput.value=durationMs;
+      slidesData[idx].duration=durationMs;
+      statusLabel.style.color="#2ed573";statusLabel.innerText="✓ Đã nap: "+tempAudio.duration.toFixed(1)+"s";
+      drawStaticPreview();
+    });
+    slideAudioRecords[idx]=audioUrl;
+  }
+
+  // Script editor
+  function openScriptEditor(idx){
+    if(!slidesData[idx])return;
+    scriptEditingIdx=idx;
+    const slide=slidesData[idx];
+    const existing=slideNarrationScripts[idx];
+    const defaultText=(existing&&existing.trim())?existing:(slide.content||slide.title).replace(/\*/g,'').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\s+/g,' ').trim();
+    $('script-modal-title').innerText='Kich ban doc — Slide '+(idx+1)+': '+slide.title||'';
+    $('script-textarea').value=defaultText;
+    $('script-modal-overlay').classList.add('active');
+    $('script-textarea').focus();
+  }
+  function closeScriptEditor(){$('script-modal-overlay').classList.remove('active');scriptEditingIdx=null;}
+  function resetScriptToSlideContent(){
+    if(scriptEditingIdx===null||!slidesData[scriptEditingIdx])return;
+    const slide=slidesData[scriptEditingIdx];
+    $('script-textarea').value=(slide.content||slide.title).replace(/\*/g,'').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\s+/g,' ').trim();
+  }
+  function saveScriptEditor(){
+    if(scriptEditingIdx===null)return;
+    const idx=scriptEditingIdx;
+    slideNarrationScripts[idx]=$('script-textarea').value.trim();
+    const label=$(elId('script-status-'+idx));
+    if(label){const hasCustom=slideNarrationScripts[idx]&&slideNarrationScripts[idx].trim();label.innerText=hasCustom?'✓ Có kịch bản đọc riêng':'Đang dùng nội dung slide để đọc';label.style.color=hasCustom?'#00ffcc':'#888';}
+    closeScriptEditor();
+  }
+
+  // TTS
+  function cleanTextForTTS(text){
+    if(!text)return '';
+    return text.replace(/\*/g,'').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu,'').replace(/\s+/g,' ').trim();
+  }
+  async function callViettelTTS(rawText){
+    const endpoint=el('viettel-endpoint').value.trim();
+    const token=el('viettel-token').value.trim();
+    const customVoice=el('viettel-voice-custom').value.trim();
+    const voice=customVoice||el('viettel-voice').value.trim()||'hn-phuongtrang';
+    const speed=parseFloat(el('viettel-speed').value)||1.0;
+    if(!endpoint)throw new Error('Chua nhap Endpoint API.');
+    if(!token)throw new Error('Chua nhap Token API Viettel AI.');
+    const cleanText=cleanTextForTTS(rawText);
+    if(!cleanText)throw new Error('Noi dung slide dang trong.');
+    let res;
+    try{
+      res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','accept':'*/*'},
+        body:JSON.stringify({text:cleanText,voice,speed,tts_return_option:3,token,without_filter:false})
+      });
+    }catch(networkErr){throw new Error('Khong ket noi duoc toi "'+endpoint+'". CORS hoac domain sai.');}
+    if(!res.ok){let detail='';try{detail=await res.text();}catch(e){}throw new Error('API loi HTTP '+res.status+(detail?' — '+detail.slice(0,200):''));}
+    const blob=await res.blob();
+    if(blob.type&&blob.type.includes('json')){const errText=await blob.text();throw new Error('Viettel AI bao loi: '+errText.slice(0,200));}
+    return URL.createObjectURL(blob);
+  }
+
+  async function generateTTSForSlide(idx){
+    const slide=slidesData[idx];if(!slide)return;
+    const btn=$(elId('tts-btn-'+idx));
+    const statusLabel=$(elId('audio-status-'+idx));
+    const customScript=slideNarrationScripts[idx];
+    const textToSpeak=(customScript&&customScript.trim())?customScript:((slide.content&&slide.content.trim())?slide.content:slide.title);
+    if(btn){btn.disabled=true;btn.innerText='⏳ Đang tạo...';}
+    if(statusLabel){statusLabel.style.color='#ffa500';statusLabel.innerText='⏳ Đang gọi Viettel AI...';}
+    try{
+      const audioUrl=await callViettelTTS(textToSpeak);
+      slideAudioRecords[idx]=audioUrl;
+      await new Promise(resolve=>{
+        const tempAudio=new Audio(audioUrl);
+        tempAudio.addEventListener('loadedmetadata',()=>{
+          let durationMs=Math.round(tempAudio.duration*1000)+400;
+          const durInput=$(elId('dur-input-'+idx));
+          if(durInput)durInput.value=durationMs;
+          slidesData[idx].duration=durationMs;
+          if(statusLabel){statusLabel.style.color='#2ed573';statusLabel.innerText='✓ TTS AI: '+tempAudio.duration.toFixed(1)+'s';}
+          drawStaticPreview();resolve();
+        });
+        tempAudio.addEventListener('error',()=>resolve());
+      });
+    }catch(err){
+      if(statusLabel){statusLabel.style.color='#ff4757';statusLabel.innerText='✗ Lỗi: '+err.message;}
+      alert('Lỗi tạo giọng đọc cho Slide '+(idx+1)+':\n'+err.message);
+    }finally{if(btn){btn.disabled=false;btn.innerText='TTS AI';}}
+  }
+
+  async function generateTTSForAll(){
+    if(slidesData.length===0){alert('Chưa có slide nào — bấm "CẬP NHẬT JSON" trước!');return;}
+    const token=el('viettel-token').value.trim();
+    if(!token){alert('Nhập Token API Viettel AI trước!');return;}
+    const allBtn=el('tts-all-btn');
+    const overallStatus=el('status');
+    allBtn.disabled=true;
+    for(let i=0;i<slidesData.length;i++){
+      if(overallStatus)overallStatus.innerText='⏳ Đang tạo giọng đọc AI: slide '+(i+1)+'/'+slidesData.length+'...';
+      await generateTTSForSlide(i);
+    }
+    if(overallStatus)overallStatus.innerText='✓ Đã tạo xong giọng đọc AI cho tất cả slide!';
+    allBtn.disabled=false;
+  }
+
+  async function toggleAudioRecord(idx){
+    if(activeRecordIdx!==null&&activeRecordIdx!==idx){alert("Hãy dừng đang thu trước!");return;}
+    const btn=$(elId('rec-btn-'+idx));
+    const statusLabel=$(elId('audio-status-'+idx));
+    if(activeRecordIdx===null){
+      try{
+        micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+        segmentRecorder=new MediaRecorder(micStream);audioChunks=[];
+        segmentRecorder.ondataavailable=e=>{if(e.data.size>0)audioChunks.push(e.data);};
+        segmentRecorder.onstop=()=>{
+          const audioBlob=new Blob(audioChunks,{type:'audio/webm'});
+          const audioUrl=URL.createObjectURL(audioBlob);
+          const tempAudio=new Audio(audioUrl);
+          tempAudio.addEventListener('loadedmetadata',()=>{
+            let durationMs=Math.round(tempAudio.duration*1000)+400;
+            const durInput=$(elId('dur-input-'+idx));
+            if(durInput)durInput.value=durationMs;
+            slidesData[idx].duration=durationMs;
+            statusLabel.style.color="#2ed573";statusLabel.innerText="✓ Da thu: "+tempAudio.duration.toFixed(1)+"s";
+          });
+          slideAudioRecords[idx]=audioUrl;
+        };
+        segmentRecorder.start();activeRecordIdx=idx;
+        btn.innerText="Dừng";btn.className="rec-active";statusLabel.innerText="🔴 Đang thu...";
+      }catch(err){alert("Không kết nối được Mic.");}
+    }else{
+      segmentRecorder.stop();micStream.getTracks().forEach(t=>t.stop());activeRecordIdx=null;
+      btn.innerText="Thu";btn.className="";
+    }
+  }
+
+  // Drawing helpers
+  function hexToRgba(hex,a){hex=hex.replace('#','');return 'rgba('+parseInt(hex.substring(0,2),16)+','+parseInt(hex.substring(2,4),16)+','+parseInt(hex.substring(4,6),16)+','+a+')';}
+  function clamp01(v){return Math.max(0,Math.min(1,v));}
+  function easeOutCubic(t){return 1-Math.pow(1-t,3);}
+  function easeInCubic(t){return t*t*t;}
+  function easeOutBack(t){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);}
+  function easeOutQuart(t){return 1-Math.pow(1-t,4);}
+  function staggerReveal(elapsed,delayMs,durMs){
+    const t=clamp01((elapsed-delayMs)/durMs);
+    const eased=easeOutQuart(t);
+    return{alpha:eased,offsetY:30*(1-eased),scale:0.94+0.06*eased};
+  }
+
+  // Intro background
+  function drawIntroBackground(elapsed,slide){
+    const c=ctx;
+    const pct=elapsed/Math.max(slide.duration,1);
+    const driftZoom=1+pct*0.04;
+    if(introBgImageLoaded&&introBgImage.width>0&&introBgImage.height>0){
+      const canvasRatio=1080/1920,imgRatio=introBgImage.width/introBgImage.height;
+      let sWidth=introBgImage.width,sHeight=introBgImage.height,sX=0,sY=0;
+      if(imgRatio>canvasRatio){sWidth=introBgImage.height*canvasRatio;sX=(introBgImage.width-sWidth)/2;}
+      else{sHeight=introBgImage.width/canvasRatio;sY=(introBgImage.height-sHeight)/2;}
+      let zWidth=sWidth/driftZoom,zHeight=sHeight/driftZoom,zX=sX+(sWidth-zWidth)/2,zY=sY+(sHeight-zHeight)/2;
+      c.filter='blur(2px) brightness(0.55) saturate(1.15)';
+      c.drawImage(introBgImage,zX,zY,zWidth,zHeight,0,0,1080,1920);
+      c.filter='none';
+    }else{c.fillStyle='#060e17';c.fillRect(0,0,1080,1920);}
+    const duo=c.createLinearGradient(0,0,0,1920);
+    duo.addColorStop(0,'rgba(40,75,98,0.35)');duo.addColorStop(0.55,'rgba(6,14,23,0.55)');duo.addColorStop(1,'rgba(104,149,163,0.20)');
+    c.fillStyle=duo;c.fillRect(0,0,1080,1920);
+    const vignette=c.createRadialGradient(540,900,200,540,900,1100);
+    vignette.addColorStop(0,'rgba(0,0,0,0)');vignette.addColorStop(1,'rgba(0,0,0,0.65)');
+    c.fillStyle=vignette;c.fillRect(0,0,1080,1920);
+    c.save();c.globalAlpha=0.16;
+    const waveColors=['#8fb8c4','#6895a3','#284b62'];
+    for(let row=0;row<9;row++){
+      const baseY=260+row*190,speed=1600+row*220,phase=(elapsed/speed)*Math.PI*2+row*0.7,amp=22+(row%3)*10;
+      c.beginPath();
+      for(let x=0;x<=1080;x+=20){const y=baseY+Math.sin(x/140+phase)*amp;if(x===0)c.moveTo(x,y);else c.lineTo(x,y);}
+      const rowGrad=c.createLinearGradient(0,baseY,1080,baseY);
+      rowGrad.addColorStop(0,'rgba(0,0,0,0)');rowGrad.addColorStop(0.5,hexToRgba(waveColors[row%waveColors.length],0.9));rowGrad.addColorStop(1,'rgba(0,0,0,0)');
+      c.strokeStyle=rowGrad;c.lineWidth=1.8;c.stroke();
+    }
+    c.restore();
+  }
+
+  // Intro kinetic title
+  function drawIntroKineticTitle(c,titleText,elapsed,alpha){
+    const maxWidth=820,fontSize=88,lineHeight=104,cx=540;
+    c.save();c.globalAlpha=alpha;
+    c.font='900 '+fontSize+'px "Be Vietnam Pro",sans-serif';
+    c.letterSpacing='3px';c.textAlign='left';c.textBaseline='alphabetic';
+    const rawWords=titleText.split(' ').filter(w=>w.length>0);
+    const spaceWidth=c.measureText(' ').width;
+    let lines=[],currentLineWords=[],currentLineWidth=0;
+    rawWords.forEach(word=>{
+      const wWidth=c.measureText(word).width;
+      if(currentLineWidth+wWidth>maxWidth&&currentLineWords.length>0){lines.push({words:currentLineWords,width:currentLineWidth-spaceWidth});currentLineWords=[];currentLineWidth=0;}
+      currentLineWords.push({text:word,width:wWidth});currentLineWidth+=wWidth+spaceWidth;
+    });
+    if(currentLineWords.length>0)lines.push({words:currentLineWords,width:currentLineWidth-spaceWidth});
+    const blockHeight=lines.length*lineHeight;
+    const startY=960-blockHeight/2+fontSize*0.72;
+    const glowR=Math.max(maxWidth,blockHeight)*0.62;
+    const glow=c.createRadialGradient(cx,960,glowR*0.1,cx,960,glowR);
+    glow.addColorStop(0,'rgba(143,184,196,0.24)');glow.addColorStop(0.55,'rgba(40,75,98,0.16)');glow.addColorStop(1,'rgba(40,75,98,0)');
+    c.fillStyle=glow;c.beginPath();c.arc(cx,960,glowR,0,Math.PI*2);c.fill();
+    const textGrad=c.createLinearGradient(cx,startY-fontSize,cx,startY+blockHeight);
+    textGrad.addColorStop(0,'#eaf5f8');textGrad.addColorStop(1,'#6895a3');
+    let wordCounter=0;const staggerMs=60,revealMs=320;
+    lines.forEach((line,li)=>{
+      let x=cx-line.width/2;const y=startY+li*lineHeight;
+      line.words.forEach((w,wi)=>{
+        const localElapsed=elapsed-wordCounter*staggerMs;
+        const wordProgress=isRecording?Math.max(0,Math.min(1,localElapsed/revealMs)):1;
+        const wordOffsetY=(1-wordProgress)*44;
+        c.save();c.globalAlpha=alpha*wordProgress;c.letterSpacing='3px';
+        c.strokeStyle='rgba(6,14,23,0.85)';c.lineWidth=10;c.lineJoin='round';
+        c.strokeText(w.text,x,y+wordOffsetY);c.fillStyle=textGrad;
+        c.shadowColor='rgba(104,149,163,0.6)';c.shadowBlur=25;
+        c.fillText(w.text,x,y+wordOffsetY);c.restore();
+        x+=w.width+spaceWidth;wordCounter++;
+      });
+    });
+    const flourishY1=startY-fontSize-34,flourishY2=startY+blockHeight-fontSize*0.28;
+    [flourishY1,flourishY2].forEach(fy=>{
+      const flourish=c.createLinearGradient(cx-300,fy,cx+300,fy);
+      flourish.addColorStop(0,'rgba(104,149,163,0)');flourish.addColorStop(0.5,'rgba(143,184,196,0.5)');flourish.addColorStop(1,'rgba(40,75,98,0)');
+      c.strokeStyle=flourish;c.lineWidth=1.5;c.beginPath();c.moveTo(cx-260,fy);c.lineTo(cx+260,fy);c.stroke();
+    });
+    c.restore();
+  }
+
+  // Chat scene
+  function drawChatScene(slide,elapsed,alpha,cardX,cardY,cardWidth){
+    const messages=(slide.visual_assets&&slide.visual_assets.chat_messages)||[];
+    if(messages.length===0)return 0;
+    const bubbleMaxW=820,bubblePadX=30,bubblePadY=22,bubbleGap=24;
+    let curY=cardY+60;
+    ctx.save();ctx.globalAlpha=alpha;
+    messages.forEach((msg,i)=>{
+      const isUser=msg.sender==='user';
+      const delayMs=i*180;
+      const pop=isRecording?clamp01((elapsed-delayMs)/250):1;
+      const popScale=isRecording?0.85+0.15*easeOutBack(pop):1;
+      ctx.save();ctx.globalAlpha=alpha*pop;
+      ctx.font='600 42px "Be Vietnam Pro",sans-serif';
+      const words=(msg.text||'').split(' ');
+      let lines=[];let lineBuf='';let lineW=0;const maxTextW=bubbleMaxW-bubblePadX*2;
+      words.forEach(w=>{const tw=ctx.measureText(w).width;if(lineW+tw>maxTextW&&lineBuf){lines.push(lineBuf);lineBuf=w;lineW=tw;}else{lineBuf=lineBuf?lineBuf+' '+w:w;lineW+=tw+ctx.measureText(' ').width;}});
+      if(lineBuf)lines.push(lineBuf);
+      const lineH=54,textBlockH=lines.length*lineH,bubbleH=textBlockH+bubblePadY*2;
+      const bubbleW=Math.min(bubbleMaxW,Math.max(...lines.map(l=>{ctx.font='600 42px "Be Vietnam Pro",sans-serif';return ctx.measureText(l).width;}))+bubblePadX*2+20);
+      const bubbleX=isUser?cardX+cardWidth-bubbleW-30:cardX+30,bubbleY=curY;
+      const cx2=bubbleX+bubbleW/2,cy=bubbleY+bubbleH/2;
+      ctx.translate(cx2,cy);ctx.scale(popScale,popScale);ctx.translate(-cx2,-cy);
+      const radius=22;
+      ctx.fillStyle=isUser?'rgba(0,200,150,0.85)':'rgba(40,44,56,0.9)';
+      ctx.strokeStyle=isUser?'rgba(0,255,204,0.5)':'rgba(100,110,130,0.4)';
+      ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(bubbleX,bubbleY,bubbleW,bubbleH,radius);ctx.fill();ctx.stroke();
+      const avatarCX=isUser?bubbleX+bubbleW+18:bubbleX-18;
+      ctx.fillStyle=isUser?'#00ccaa':'#556677';ctx.beginPath();ctx.arc(avatarCX,bubbleY+18,24*0.6,0,Math.PI*2);ctx.fill();
+      ctx.font='700 18px "Be Vietnam Pro",sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(isUser?'U':'A',avatarCX,bubbleY+18);
+      ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#fff';ctx.font='600 42px "Be Vietnam Pro",sans-serif';
+      lines.forEach((line,li)=>{ctx.fillText(line,bubbleX+bubblePadX,bubbleY+bubblePadY+li*lineH);});
+      ctx.restore();curY+=bubbleH+bubbleGap;
+    });
+    ctx.restore();return curY-cardY;
+  }
+
+  // Chart scene
+  function drawChartScene(slide,elapsed,alpha,cardX,cardY,cardWidth){
+    const data=(slide.visual_assets&&slide.visual_assets.chart_data)||[];
+    if(data.length===0)return 0;
+    const chartW=cardWidth-120,chartH=320,chartX=cardX+60,chartY=cardY+60;
+    const barGap=16,barW=(chartW-barGap*(data.length+1))/data.length,maxVal=Math.max(...data,1);
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.roundRect(chartX,chartY,chartW,chartH,16);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;
+    for(let i=1;i<=4;i++){const gy=chartY+chartH-(chartH*i/4);ctx.beginPath();ctx.moveTo(chartX,gy);ctx.lineTo(chartX+chartW,gy);ctx.stroke();}
+    data.forEach((val,i)=>{
+      const progress=isRecording?clamp01((elapsed-i*100)/500):1;
+      const barH=(val/maxVal)*(chartH-40)*easeOutCubic(progress);
+      const bx=chartX+barGap+i*(barW+barGap),by=chartY+chartH-barH-20;
+      const barGrad=ctx.createLinearGradient(bx,by,bx,chartY+chartH);
+      barGrad.addColorStop(0,'rgba(0,255,204,0.9)');barGrad.addColorStop(1,'rgba(0,255,204,0.3)');
+      ctx.fillStyle=barGrad;ctx.beginPath();ctx.roundRect(bx,by,barW,barH,[8,8,0,0]);ctx.fill();
+      ctx.shadowColor='#00ffcc';ctx.shadowBlur=6;ctx.fill();ctx.shadowBlur=0;
+      if(progress>0.5){ctx.font='700 36px "Be Vietnam Pro",sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(String(val),bx+barW/2,by-10);}
+    });
+    ctx.restore();return chartH+100;
+  }
+
+  // Motion graphic
+  function drawMotionGraphic(slide,elapsed,alpha,cardX,cardY,cardWidth){
+    const graphicType=(slide.visual_assets&&slide.visual_assets.graphic_type)||'sine_wave';
+    const graphW=cardWidth-100,graphH=380,gx=cardX+50,gy=cardY+60;
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(0,0,0,0.35)';ctx.beginPath();ctx.roundRect(gx,gy,graphW,graphH,16);ctx.fill();
+    if(graphicType==='sine_wave'){
+      const cx=gx+graphW/2,cy=gy+graphH/2;
+      for(let wave=0;wave<2;wave++){
+        const color=wave===0?'#00ffcc':'#c67cff';
+        ctx.strokeStyle=color;ctx.lineWidth=3;ctx.shadowColor=color;ctx.shadowBlur=8;ctx.beginPath();
+        for(let x=0;x<=graphW;x+=3){const phase=elapsed/(1200+wave*400)*Math.PI*2;const y=cy+Math.sin((x/graphW)*Math.PI*3+phase+wave*Math.PI)*(graphH*0.32);if(x===0)ctx.moveTo(gx+x,y);else ctx.lineTo(gx+x,y);}
+        ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+    }else if(graphicType==='math_parabola'){
+      const cx=gx+graphW/2,cy=gy+graphH-40,axW=graphW*0.85,axH=graphH*0.75;
+      ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;ctx.beginPath();
+      ctx.moveTo(cx-axW/2,cy);ctx.lineTo(cx+axW/2,cy);ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-axH);ctx.stroke();
+      ctx.strokeStyle='#00ffcc';ctx.lineWidth=3;ctx.shadowColor='#00ffcc';ctx.shadowBlur=6;ctx.beginPath();
+      const a=0.004;
+      for(let px=-axW/2;px<=axW/2;px+=3){const py=-(a*px*px);if(px===-axW/2)ctx.moveTo(cx+px,cy+py);else ctx.lineTo(cx+px,cy+py);}
+      ctx.stroke();ctx.shadowBlur=0;
+      const t=(elapsed/3000)%1;const dotX=-axW/2+t*axW;const dotY=-(a*dotX*dotX);
+      ctx.fillStyle='#ff5ca8';ctx.shadowColor='#ff5ca8';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(cx+dotX,cy+dotY,10,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }else if(graphicType==='radar'){
+      const cx=gx+graphW/2,cy=gy+graphH/2,r=Math.min(graphW,graphH)*0.38,angle=(elapsed/2000)*Math.PI*2;
+      for(let i=1;i<=4;i++){ctx.strokeStyle='rgba(0,255,204,'+(0.08+i*0.04)+')';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r*i/4,0,Math.PI*2);ctx.stroke();}
+      for(let a2=0;a2<Math.PI*2;a2+=Math.PI/4){ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a2)*r,cy+Math.sin(a2)*r);ctx.stroke();}
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
+      const sweepPath=new Path2D();sweepPath.moveTo(0,0);sweepPath.arc(0,0,r,-0.4,0.4);sweepPath.closePath();
+      const grad=ctx.createRadialGradient(0,0,0,0,0,r);grad.addColorStop(0,'rgba(0,255,204,0.5)');grad.addColorStop(1,'rgba(0,255,204,0.02)');
+      ctx.fillStyle=grad;ctx.fill(sweepPath);ctx.restore();
+      ctx.fillStyle='#00ffcc';ctx.shadowColor='#00ffcc';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }else if(graphicType==='car_driving'){
+      const cx=gx+graphW/2,cy=gy+graphH/2,roadW=graphW*0.8;
+      ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=40;ctx.lineCap='round';ctx.beginPath();
+      ctx.moveTo(cx-roadW/2,cy+60);ctx.quadraticCurveTo(cx,cy-100,cx+roadW/2,cy+60);ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=2;ctx.setLineDash([20,20]);ctx.beginPath();
+      ctx.moveTo(cx-roadW/2,cy+60);ctx.quadraticCurveTo(cx,cy-100,cx+roadW/2,cy+60);ctx.stroke();ctx.setLineDash([]);
+      const t=(elapsed/2500)%1;const carX=cx-roadW/2+t*roadW;const carY=cy+60-Math.sin(t*Math.PI)*160;
+      ctx.fillStyle='#00ffcc';ctx.shadowColor='#00ffcc';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(carX,carY,12,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }
+    ctx.restore();return graphH+100;
+  }
+
+  // Main render
+  function renderFrame(slideIdx,elapsed){
+    const slide=slidesData[slideIdx];if(!slide)return;
+    const c=ctx;
+    c.clearRect(0,0,1080,1920);
+    const safeTop=140;const isIntro=slide.type==='intro';
+
+    // Background
+    if(isIntro){drawIntroBackground(elapsed,slide);}
+    else if(bgImageLoaded&&bgImage.width>0&&bgImage.height>0){
+      let pct=elapsed/Math.max(slide.duration,1);let motionZoom=1+(pct*0.05);
+      const canvasRatio=1080/1920,imgRatio=bgImage.width/bgImage.height;
+      let sWidth=bgImage.width,sHeight=bgImage.height,sX=0,sY=0;
+      if(imgRatio>canvasRatio){sWidth=bgImage.height*canvasRatio;sX=(bgImage.width-sWidth)/2;}
+      else{sHeight=bgImage.width/canvasRatio;sY=(bgImage.height-sHeight)/2;}
+      let zWidth=sWidth/motionZoom,zHeight=sHeight/motionZoom,zX=sX+(sWidth-zWidth)/2,zY=sY+(sHeight-zHeight)/2;
+      c.filter='blur(5px) brightness(0.38) saturate(1.1)';c.drawImage(bgImage,zX,zY,zWidth,zHeight,0,0,1080,1920);c.filter='none';
+      c.fillStyle='rgba(0,0,0,0.08)';c.fillRect(0,0,1080,1920);
+    }else{
+      c.fillStyle=COLORS.bgDark;c.fillRect(0,0,1080,1920);
+      c.strokeStyle='rgba(255,255,255,0.03)';c.lineWidth=2;
+      for(let i=0;i<1080;i+=80){c.beginPath();c.moveTo(i,0);c.lineTo(i,1920);c.stroke();}
+      for(let i=0;i<1920;i+=80){c.beginPath();c.moveTo(0,i);c.lineTo(1080,i);c.stroke();}
+    }
+
+    // Transition — pure fade only (no movement, no scale, no blur)
+    const enterT=clamp01(elapsed/TRANSITION_MS);
+    const exitT=clamp01((slide.duration-elapsed)/TRANSITION_MS);
+    const isEntering=elapsed<TRANSITION_MS,isExiting=elapsed>slide.duration-TRANSITION_MS;
+    let alpha,settleScale,settleY,settleX,blurAmt;
+    if(!isRecording){alpha=1;settleScale=1;settleY=0;settleX=0;blurAmt=0;}
+    else if(isEntering){
+      alpha=easeOutCubic(enterT);
+      settleScale=1;settleY=0;settleX=0;blurAmt=0;
+    }
+    else if(isExiting){
+      alpha=1-easeInCubic(1-exitT);
+      settleScale=1;settleY=0;settleX=0;blurAmt=0;
+    }
+    else{alpha=1;settleScale=1;settleY=0;settleX=0;blurAmt=0;}
+
+    c.save();c.translate(540,960+settleY);c.scale(settleScale,settleScale);c.translate(-540,-960);
+    if(blurAmt>0.5)c.filter='blur('+Math.min(blurAmt,4).toFixed(1)+'px)';
+
+    // Progress bar
+    const numSlides=slidesData.length;
+    if(numSlides>0){
+      const totalWidth=920,gap=12,barWidth=(totalWidth-(gap*(numSlides-1)))/numSlides;
+      c.save();c.globalAlpha=alpha;
+      for(let i=0;i<numSlides;i++){
+        let barX=80+i*(barWidth+gap),barY=safeTop,bHeight=6;
+        c.fillStyle='rgba(255,255,255,0.2)';c.beginPath();c.roundRect(barX,barY,barWidth,bHeight,3);c.fill();
+        c.fillStyle=COLORS.textHighlight;c.shadowColor=COLORS.textHighlight;c.shadowBlur=10;c.beginPath();
+        if(i<slideIdx){c.roundRect(barX,barY,barWidth,bHeight,3);c.fill();}
+        else if(i===slideIdx){let pct=elapsed/slide.duration;c.roundRect(barX,barY,barWidth*Math.min(pct,1),bHeight,3);c.fill();}
+      }
+      c.restore();
+    }
+
+    // Logo
+    const maxLogoW=420,maxLogoH=182;
+    if(logoImage.src&&logoImage.width>0){
+      const logoRatio=logoImage.width/logoImage.height;
+      let drawW=maxLogoW,drawH=maxLogoW/logoRatio;
+      if(drawH>maxLogoH){drawH=maxLogoH;drawW=maxLogoH*logoRatio;}
+      const padX=22,padY=16;
+      const panelX=80-padX,panelY=safeTop+30-padY,panelW=drawW+padX*2,panelH=drawH+padY*2;
+      c.save();c.globalAlpha=alpha;
+      c.fillStyle='rgba(255,255,255,0.05)';c.strokeStyle='rgba(255,255,255,0.14)';c.lineWidth=1.5;
+      c.beginPath();c.roundRect(panelX,panelY,panelW,panelH,18);c.fill();c.stroke();
+      c.drawImage(logoImage,80,safeTop+30,drawW,drawH);c.restore();
+    }
+
+    // Date + Location — styled block
+    const dateText=(el('date-input')||{value:''}).value;
+    const locationText=(el('location-input')||{value:''}).value;
+    if(dateText||locationText){
+      c.save();c.globalAlpha=alpha;
+      // Format date: "Ngày 18/07/2026"
+      const displayDate=dateText?'Ngày '+dateText:'';
+      // Location line
+      const locText=locationText||'';
+      // Draw location (top, small accent)
+      if(locText){
+        c.font='600 26px "Be Vietnam Pro",sans-serif';
+        c.textAlign='right';c.textBaseline='top';c.letterSpacing='1px';
+        c.fillStyle='rgba(255,215,122,0.9)';c.shadowColor='#ffd77a';c.shadowBlur=6;
+        c.fillText(locText,1000,safeTop+28);c.shadowBlur=0;c.letterSpacing='0px';
+      }
+      // Draw date (below location, bigger, decorative)
+      if(displayDate){
+        c.font='800 34px "Be Vietnam Pro",sans-serif';
+        c.textAlign='right';c.textBaseline='top';c.letterSpacing='2px';
+        c.fillStyle='rgba(255,255,255,0.75)';c.fillText(displayDate,1000,safeTop+60);
+        // Decorative dot
+        const dateWidth=c.measureText(displayDate).width;
+        c.fillStyle='#ffd77a';c.shadowColor='#ffd77a';c.shadowBlur=12;
+        c.beginPath();c.arc(1000-dateWidth-20,safeTop+60+20,5,0,Math.PI*2);c.fill();
+        c.shadowBlur=0;c.letterSpacing='0px';
+      }
+      c.restore();
+    }
+
+    // Header line
+    if(!isIntro){
+      c.save();c.globalAlpha=alpha*0.7;
+      const headerLineY=safeTop+96;
+      const headerLine=c.createLinearGradient(80,0,1000,0);
+      headerLine.addColorStop(0,'rgba(0,255,204,0)');headerLine.addColorStop(0.5,'rgba(0,255,204,0.35)');headerLine.addColorStop(1,'rgba(0,255,204,0)');
+      c.strokeStyle=headerLine;c.lineWidth=1.5;c.beginPath();c.moveTo(80,headerLineY);c.lineTo(1000,headerLineY);c.stroke();c.restore();
+    }
+
+    c.save();c.globalAlpha=alpha;
+    let hasImage=slide.imageObj&&slide.imageObj.width>0;
+    let hasIcon=!hasImage&&slide.iconObj&&slide.iconObj.width>0;
+    let textHeight=getRichTextHeight(c,slide.content,800,75);
+    let iconBadgeSize=220;
+    let cardWidth=860;
+    const titleMaxW=cardWidth-60;
+    c.font='900 58px "Be Vietnam Pro",sans-serif';
+    const titleWordsArr=(slide.title||'').toUpperCase().split(' ');
+    let titleLineCount=1,titleLineBuf='';
+    for(const word of titleWordsArr){const testLine=titleLineBuf?titleLineBuf+' '+word:word;if(c.measureText(testLine).width>titleMaxW&&titleLineBuf){titleLineCount++;titleLineBuf=word;}else{titleLineBuf=testLine;}}
+    const titleLineH=84,titleBlockH=titleLineCount*titleLineH+60;
+    let cardHeight=titleBlockH+textHeight+100;
+    let imgDrawH=0;
+    if(hasImage){let imgRatio=slide.imageObj.width/slide.imageObj.height;imgDrawH=600/imgRatio;if(imgDrawH>350)imgDrawH=350;cardHeight+=imgDrawH+50;}
+    if(hasIcon)cardHeight+=iconBadgeSize+50;
+    let cardX=(1080-cardWidth)/2,cardY=Math.max((1920-cardHeight)/2,safeTop+220);
+    const titleText=slide.title.toUpperCase();
+
+    if(isIntro){drawIntroKineticTitle(c,titleText,elapsed,alpha);c.restore();c.restore();return;}
+
+    const isChat=slide.type==='chat',isChart=slide.type==='chart',isMotion=slide.type==='motion_graphic';
+
+    if(isChat||isChart||isMotion){
+      const accent=ACCENT_PALETTE[slideIdx%ACCENT_PALETTE.length];
+      const cardW=860,cardX2=(1080-cardW)/2,cardY2=Math.max(500,safeTop+340);
+      // Staggered reveals: tag → title → content → waveform
+      const stagTag=isRecording?staggerReveal(elapsed,0,280):{alpha:1,offsetY:0,scale:1};
+      const stagTitle=isRecording?staggerReveal(elapsed,120,320):{alpha:1,offsetY:0,scale:1};
+      const stagContent=isRecording?staggerReveal(elapsed,280,350):{alpha:1,offsetY:0,scale:1};
+      const stagWave=isRecording?staggerReveal(elapsed,450,300):{alpha:1,offsetY:0,scale:1};
+      // Tag badge
+      const tagText2=String(slideIdx+1).padStart(2,'0');
+      c.save();c.globalAlpha=alpha*stagTag.alpha;
+      c.translate(540,cardY2-36);c.scale(stagTag.scale,stagTag.scale);c.translate(-540,-cardY2+36);
+      c.font='800 30px "Be Vietnam Pro",sans-serif';const tagTW2=c.measureText(tagText2).width;const tagX2=cardX2+34,tagY2t=cardY2-62+stagTag.offsetY;
+      c.fillStyle=COLORS.bgDark;c.strokeStyle=accent.border;c.lineWidth=2;c.beginPath();c.roundRect(tagX2,tagY2t,tagTW2+44,52,26);c.fill();c.stroke();
+      c.fillStyle=accent.title;c.textAlign='center';c.textBaseline='middle';c.shadowColor=accent.glow;c.shadowBlur=10;
+      c.fillText(tagText2,tagX2+(tagTW2+44)/2,tagY2t+27);c.restore();
+      // Title
+      c.save();c.globalAlpha=alpha*stagTitle.alpha;
+      c.translate(540,cardY2+40);c.scale(stagTitle.scale,stagTitle.scale);c.translate(-540,-cardY2-40);
+      c.font='900 52px "Be Vietnam Pro",sans-serif';c.textAlign='center';c.textBaseline='middle';
+      c.fillStyle=accent.title;c.shadowColor=accent.glow;c.shadowBlur=10;c.fillText(titleText,540,cardY2+40+stagTitle.offsetY);c.shadowBlur=0;c.restore();
+      // Content (chat/chart/motion)
+      let contentOffset=0;
+      c.save();c.globalAlpha=alpha*stagContent.alpha;
+      c.translate(540,cardY2+80);c.scale(stagContent.scale,stagContent.scale);c.translate(-540,-cardY2-80);
+      if(isChat)contentOffset=drawChatScene(slide,elapsed,alpha*stagContent.alpha,cardX2,cardY2+80+stagContent.offsetY,cardW);
+      else if(isChart)contentOffset=drawChartScene(slide,elapsed,alpha*stagContent.alpha,cardX2,cardY2+80+stagContent.offsetY,cardW);
+      else if(isMotion)contentOffset=drawMotionGraphic(slide,elapsed,alpha*stagContent.alpha,cardX2,cardY2+80+stagContent.offsetY,cardW);
+      if(slide.content){c.textBaseline='top';drawRichText(c,slide.content,540,cardY2+80+contentOffset+10+stagContent.offsetY,800,72,accent.glow);}
+      c.restore();
+      // Audio waveform — fixed at bottom, staggered
+      const wfY=1720;
+      c.save();c.globalAlpha=0.85*alpha*stagWave.alpha;
+      c.translate(540,wfY+30);c.scale(stagWave.scale,stagWave.scale);c.translate(-540,-wfY-30);
+      c.fillStyle='rgba(0,255,204,0.08)';c.fillRect(540-260,wfY+stagWave.offsetY,520,60);
+      for(let i=0;i<26;i++){
+        const x=540-260+i*(520/25);const height=18+Math.abs(Math.sin((i/25)*Math.PI*3+elapsed/250))*34;
+        c.fillStyle='rgba(0,255,204,'+(0.25+(height-18)/68*0.35)+')';c.fillRect(x,wfY+30+stagWave.offsetY-height/2,10,height);
+      }
+      c.font='500 28px "Be Vietnam Pro",sans-serif';c.fillStyle='rgba(255,255,255,0.8)';c.textAlign='center';c.textBaseline='top';
+      c.fillText('@DiamondFlow',540,wfY+62+stagWave.offsetY);c.restore();
+      c.restore();c.restore();return;
+    }
+
+    const accent=ACCENT_PALETTE[slideIdx%ACCENT_PALETTE.length];
+    const tagText=String(slideIdx+1).padStart(2,'0');
+    // Staggered reveals for concept slides
+    const stagCard=isRecording?staggerReveal(elapsed,0,300):{alpha:1,offsetY:0,scale:1};
+    const stagTag2=isRecording?staggerReveal(elapsed,80,280):{alpha:1,offsetY:0,scale:1};
+    const stagTitle2=isRecording?staggerReveal(elapsed,160,320):{alpha:1,offsetY:0,scale:1};
+    const stagBody=isRecording?staggerReveal(elapsed,300,350):{alpha:1,offsetY:0,scale:1};
+    const stagWave2=isRecording?staggerReveal(elapsed,450,300):{alpha:1,offsetY:0,scale:1};
+
+    // Tag badge
+    c.save();c.globalAlpha=alpha*stagTag2.alpha;
+    c.font='800 30px "Be Vietnam Pro",sans-serif';
+    const tagTextWidth=c.measureText(tagText).width,tagPadX=22,tagH=52,tagW=tagTextWidth+tagPadX*2;
+    const tagX=cardX+34,tagY=cardY-tagH-10+stagTag2.offsetY;
+    c.translate(540,tagY+tagH/2);c.scale(stagTag2.scale,stagTag2.scale);c.translate(-540,-tagY-tagH/2);
+    c.fillStyle=COLORS.bgDark;c.strokeStyle=accent.border;c.lineWidth=2;c.beginPath();c.roundRect(tagX,tagY,tagW,tagH,tagH/2);c.fill();c.stroke();
+    c.fillStyle=accent.title;c.textAlign='center';c.textBaseline='middle';c.shadowColor=accent.glow;c.shadowBlur=10;
+    c.fillText(tagText,tagX+tagW/2,tagY+tagH/2+1);c.restore();
+
+    // Card body
+    c.save();c.globalAlpha=alpha*stagCard.alpha;
+    c.translate(540,cardY+cardHeight/2);c.scale(stagCard.scale,stagCard.scale);c.translate(-540,-cardY-cardHeight/2);
+    c.shadowColor=accent.glow;c.shadowBlur=20;c.fillStyle=COLORS.cardBg;c.beginPath();c.roundRect(cardX,cardY+stagCard.offsetY,cardWidth,cardHeight,40);c.fill();
+    c.shadowBlur=6;c.strokeStyle=accent.border;c.lineWidth=3;c.stroke();c.shadowBlur=0;
+
+    let currentY=cardY+55+stagCard.offsetY;
+    // Title
+    c.save();c.globalAlpha=alpha*stagTitle2.alpha;
+    c.translate(540,currentY+70);c.scale(stagTitle2.scale,stagTitle2.scale);c.translate(-540,-currentY-70);
+    c.font='900 58px "Be Vietnam Pro",sans-serif';c.letterSpacing="1.5px";c.fillStyle=accent.title;c.textAlign='center';c.textBaseline='middle';
+    const titleMaxWDraw=cardWidth-60,titleWordsDraw=titleText.split(' ');
+    let titleLinesDraw=[],titleLineDrawBuf='';
+    for(const word of titleWordsDraw){const testLine=titleLineDrawBuf?titleLineDrawBuf+' '+word:word;if(c.measureText(testLine).width>titleMaxWDraw&&titleLineDrawBuf){titleLinesDraw.push(titleLineDrawBuf);titleLineDrawBuf=word;}else{titleLineDrawBuf=testLine;}}
+    if(titleLineDrawBuf)titleLinesDraw.push(titleLineDrawBuf);
+    let titleDrawY=currentY+70+stagTitle2.offsetY;
+    for(const line of titleLinesDraw){c.shadowColor=accent.glow;c.shadowBlur=10;c.fillText(line,540,titleDrawY);titleDrawY+=titleLineH;}
+    c.shadowBlur=0;c.letterSpacing="0px";
+    const underlineY=titleDrawY+4;
+    const underlineGrad=c.createLinearGradient(540-90,underlineY,540+90,underlineY);
+    underlineGrad.addColorStop(0,hexToRgba(accent.glow,0));underlineGrad.addColorStop(0.5,hexToRgba(accent.glow,0.75));underlineGrad.addColorStop(1,hexToRgba(accent.glow,0));
+    c.save();c.strokeStyle=underlineGrad;c.lineWidth=3;c.beginPath();c.moveTo(540-90,underlineY);c.lineTo(540+90,underlineY);c.stroke();c.restore();
+    c.restore();
+    currentY=titleDrawY+20;
+
+    // Body content with stagger
+    c.save();c.globalAlpha=alpha*stagBody.alpha;
+    c.translate(540,currentY);c.scale(stagBody.scale,stagBody.scale);c.translate(-540,-currentY);
+
+    if(hasImage){
+      let imgRatio=slide.imageObj.width/slide.imageObj.height;let drawW=600,drawH=drawW/imgRatio;
+      if(drawH>350){drawH=350;drawW=drawH*imgRatio;}
+      let imgX=540-drawW/2;
+      c.save();c.shadowColor=accent.glow;c.shadowBlur=15;c.beginPath();c.roundRect(imgX,currentY,drawW,drawH,20);
+      c.strokeStyle=accent.border;c.lineWidth=2;c.stroke();c.clip();c.drawImage(slide.imageObj,imgX,currentY,drawW,drawH);c.restore();
+      currentY+=drawH+50;
+    }else if(hasIcon){
+      const iconPop=isRecording?easeOutBack(clamp01((elapsed-90)/320)):1;
+      const badgeCX=540,badgeCY=currentY+iconBadgeSize/2,badgeR=iconBadgeSize/2;
+      c.save();c.translate(badgeCX,badgeCY);c.scale(iconPop,iconPop);c.translate(-badgeCX,-badgeCY);
+      const glowGrad=c.createRadialGradient(badgeCX,badgeCY,badgeR*0.1,badgeCX,badgeCY,badgeR);
+      glowGrad.addColorStop(0,hexToRgba(accent.glow,0.15));glowGrad.addColorStop(1,hexToRgba(accent.glow,0));
+      c.fillStyle=glowGrad;c.beginPath();c.arc(badgeCX,badgeCY,badgeR,0,Math.PI*2);c.fill();
+      c.strokeStyle='rgba(255,255,255,0.35)';c.lineWidth=1.5;c.beginPath();c.arc(badgeCX,badgeCY,badgeR*0.8,0,Math.PI*2);c.stroke();
+      const iconDrawSize=iconBadgeSize*0.45;c.drawImage(slide.iconObj,badgeCX-iconDrawSize/2,badgeCY-iconDrawSize/2,iconDrawSize,iconDrawSize);
+      c.restore();currentY+=iconBadgeSize+50;
+    }
+
+    c.textBaseline='top';drawRichText(c,slide.content,540,currentY,800,75,accent.glow);
+    c.restore(); // end stagBody
+
+    // Audio waveform — fixed at bottom, staggered
+    const bottomY=1720;
+    c.save();c.globalAlpha=0.85*alpha*stagWave2.alpha;
+    c.translate(540,bottomY+30);c.scale(stagWave2.scale,stagWave2.scale);c.translate(-540,-bottomY-30);
+    c.fillStyle='rgba(0,255,204,0.08)';c.fillRect(540-260,bottomY+stagWave2.offsetY,520,60);
+    for(let i=0;i<26;i++){
+      const x=540-260+i*(520/25);const height=18+Math.abs(Math.sin((i/25)*Math.PI*3+elapsed/250))*34;
+      c.fillStyle='rgba(0,255,204,'+(0.25+(height-18)/68*0.35)+')';c.fillRect(x,bottomY+30+stagWave2.offsetY-height/2,10,height);
+    }
+    c.font='500 28px "Be Vietnam Pro",sans-serif';c.fillStyle='rgba(255,255,255,0.8)';c.textAlign='center';c.textBaseline='top';
+    c.fillText('@DiamondFlow',540,bottomY+62+stagWave2.offsetY);c.restore();
+    c.restore();c.restore();
+  }
+
+  // Animation loop
+  let audioCtx,audioDest;
+  function animationLoop(timestamp){
+    if(!isRecording)return;
+    if(!slideStartTime)slideStartTime=timestamp;
+    let elapsed=timestamp-slideStartTime;
+    let currentSlide=slidesData[currentSlideIdx];
+    if(elapsed>=currentSlide.duration){
+      currentSlideIdx++;slideStartTime=timestamp;elapsed=0;
+      if(currentSlideIdx>=slidesData.length){stopCanvasRecording();return;}
+      currentSlide=slidesData[currentSlideIdx];
+      playTransitionSFX(currentSlide.type);playSlideAudioTrack(currentSlideIdx);
+    }
+    renderFrame(currentSlideIdx,elapsed);
+    animationFrameId=requestAnimationFrame(animationLoop);
+  }
+
+  function playTransitionSFX(slideType){
+    if(!audioCtx)return;
+    if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+    const now=audioCtx.currentTime;
+    const isIntroType=slideType==='intro',isQuestionType=slideType==='question';
+    const sweepTime=isIntroType?0.36:0.24;
+    [-6,6].forEach(detune=>{
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+      osc.type='sine';osc.detune.setValueAtTime(detune,now);
+      osc.frequency.setValueAtTime(240,now);osc.frequency.exponentialRampToValueAtTime(isIntroType?780:920,now+sweepTime);
+      filter.type='lowpass';filter.frequency.setValueAtTime(2000,now);filter.frequency.exponentialRampToValueAtTime(320,now+sweepTime+0.16);
+      gain.gain.setValueAtTime(0.0001,now);gain.gain.linearRampToValueAtTime(0.12,now+0.045);gain.gain.exponentialRampToValueAtTime(0.0001,now+sweepTime+0.22);
+      osc.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);if(audioDest)gain.connect(audioDest);
+      osc.start(now);osc.stop(now+sweepTime+0.3);
+    });
+    const landTime=now+0.28;
+    const tickOsc=audioCtx.createOscillator(),tickGain=audioCtx.createGain();
+    tickOsc.type='sine';tickOsc.frequency.setValueAtTime(isQuestionType?900:560,landTime);
+    tickOsc.frequency.exponentialRampToValueAtTime(isQuestionType?1220:360,landTime+0.15);
+    tickGain.gain.setValueAtTime(0.0001,landTime);tickGain.gain.linearRampToValueAtTime(0.1,landTime+0.015);tickGain.gain.exponentialRampToValueAtTime(0.0001,landTime+0.2);
+    tickOsc.connect(tickGain);tickGain.connect(audioCtx.destination);if(audioDest)tickGain.connect(audioDest);
+    tickOsc.start(landTime);tickOsc.stop(landTime+0.22);
+    if(isIntroType){
+      const subOsc=audioCtx.createOscillator(),subGain=audioCtx.createGain();
+      subOsc.type='sine';subOsc.frequency.setValueAtTime(70,now);subOsc.frequency.exponentialRampToValueAtTime(110,now+0.5);
+      subGain.gain.setValueAtTime(0.0001,now);subGain.gain.linearRampToValueAtTime(0.09,now+0.15);subGain.gain.exponentialRampToValueAtTime(0.0001,now+0.65);
+      subOsc.connect(subGain);subGain.connect(audioCtx.destination);if(audioDest)subGain.connect(audioDest);
+      subOsc.start(now);subOsc.stop(now+0.7);
+    }
+  }
+
+  let slideAudioElement=null,slideAudioSource=null;
+  function playSlideAudioTrack(index){
+    if(!slidesData||!slidesData[index])return;
+    const url=slideAudioRecords[index];
+    try{if(slideAudioElement){slideAudioElement.pause();slideAudioElement.src='';}}catch(e){}
+    try{if(slideAudioSource&&audioCtx){try{slideAudioSource.disconnect();}catch(e){}slideAudioSource=null;}}catch(e){}
+    if(!url)return;
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    slideAudioElement=new Audio(url);slideAudioElement.crossOrigin='anonymous';slideAudioElement.preload='auto';
+    try{slideAudioSource=audioCtx.createMediaElementSource(slideAudioElement);}
+    catch(e){slideAudioElement.play();return;}
+    if(isRecording&&audioDest)slideAudioSource.connect(audioDest);
+    try{slideAudioSource.connect(audioCtx.destination);}catch(e){}
+    slideAudioElement.play().catch(()=>{});
+  }
+
+  function startRecording(){
+    syncDurationsFromUI();
+    if(slidesData.length===0)return;
+    if(isRecording)return;
+    if(currentPreviewAudio){currentPreviewAudio.pause();currentPreviewAudio=null;}
+    const st=el('status');if(st)st.innerText="⏳ Đang chuẩn bị font...";
+    document.fonts.ready.then(()=>{
+      isRecording=true;currentSlideIdx=0;slideStartTime=null;
+      if(st)st.innerText="🔴 ĐANG RENDER VIDEO...";
+      const canvasStream=canvas().captureStream(30);
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      audioCtx.resume().then(()=>{
+        audioDest=audioCtx.createMediaStreamDestination();
+        const audioTracks=audioDest.stream.getAudioTracks();
+        const finalCombinedStream=new MediaStream([...canvasStream.getVideoTracks(),...audioTracks]);
+        const recorderOptions=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?{mimeType:'video/webm;codecs=vp9'}:{mimeType:'video/webm'};
+        mediaRecorder=new MediaRecorder(finalCombinedStream,recorderOptions);
+        recordedChunks=[];
+        mediaRecorder.ondataavailable=e=>{if(e.data.size>0)recordedChunks.push(e.data);};
+        mediaRecorder.onstop=async()=>{
+          const blob=new Blob(recordedChunks,{type:'video/webm'});
+          try{await convertWebMToMP4(blob);}
+          catch(err){
+            const url=URL.createObjectURL(blob);const a=document.createElement('a');
+            a.href=url;a.download='Video_'+Date.now()+'.webm';a.click();
+            if(st)st.innerText="⚠ Convert MP4 thất bại — đã tải file WebM.";
+          }
+          drawStaticPreview();
+        };
+        mediaRecorder.start();
+        animationFrameId=requestAnimationFrame(animationLoop);
+        playTransitionSFX(slidesData[0].type);playSlideAudioTrack(0);
+      });
+    });
+  }
+
+  async function convertWebMToMP4(webmBlob){
+    const loadingEl=$('ffmpeg-loading'),progressFill=$('ffmpeg-progress-fill'),progressPct=$('ffmpeg-progress-pct');
+    const startBtn=el('start-btn');
+    loadingEl.classList.add('active');
+    if(startBtn){startBtn.disabled=true;startBtn.style.opacity='0.5';startBtn.style.cursor='not-allowed';}
+    const st=el('status');if(st)st.innerText="⚙ Đang chuyển đổi sang MP4...";
+    try{
+      if(typeof FFmpeg==='undefined'||typeof FFmpeg.createFFmpeg!=='function')throw new Error('FFmpeg library chua tai duoc. F5-refresh lai.');
+      if(!window._ffmpegInstance){
+        const{createFFmpeg}=FFmpeg;
+        window._ffmpegInstance=createFFmpeg({log:true,corePath:'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/umd/ffmpeg-core.js',
+          progress:({ratio})=>{const pct=Math.min(Math.round(ratio*100),100);progressFill.style.width=pct+'%';progressPct.innerText=pct+'%';}
+        });
+        if(st)st.innerText="⚙ Đang tải FFmpeg core (lần đầu có thể chậm ~10-30s)...";
+        await window._ffmpegInstance.load();
+      }
+      const ffmpeg=window._ffmpegInstance;progressFill.style.width='0%';progressPct.innerText='0%';
+      const inputData=new Uint8Array(await webmBlob.arrayBuffer());
+      ffmpeg.FS('writeFile','input.webm',inputData);
+      await ffmpeg.run('-i','input.webm','-c:v','libx264','-preset','ultrafast','-crf','23','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','output.mp4');
+      const outputData=ffmpeg.FS('readFile','output.mp4');
+      const mp4Blob=new Blob([outputData.buffer],{type:'video/mp4'});
+      try{ffmpeg.FS('unlink','input.webm');}catch(e){}
+      try{ffmpeg.FS('unlink','output.mp4');}catch(e){}
+      const url=URL.createObjectURL(mp4Blob);const a=document.createElement('a');a.href=url;a.download='video_hoan_chinh.mp4';a.click();URL.revokeObjectURL(url);
+      if(st)st.innerText="✓ XUẤT THÀNH CÔNG — File MP4 đã tải!";
+    }catch(err){throw err;}
+    finally{loadingEl.classList.remove('active');progressFill.style.width='0%';progressPct.innerText='0%';if(startBtn){startBtn.disabled=false;startBtn.style.opacity='1';startBtn.style.cursor='pointer';}}
+  }
+
+  function stopCanvasRecording(){
+    isRecording=false;cancelAnimationFrame(animationFrameId);
+    if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();
+  }
+
+  function loadTTSConfigFromStorage(prefix){
+    try{
+      const ep=localStorage.getItem(prefix+'_viettel_endpoint');
+      const tk=localStorage.getItem(prefix+'_viettel_token');
+      const vc=localStorage.getItem(prefix+'_viettel_voice_custom');
+      const sp=localStorage.getItem(prefix+'_viettel_speed');
+      if(ep)el('viettel-endpoint').value=ep;
+      if(tk)el('viettel-token').value=tk;
+      if(vc)el('viettel-voice-custom').value=vc;
+      if(sp)el('viettel-speed').value=sp;
+    }catch(e){}
+  }
+  function saveTTSConfigToStorage(){
+    try{
+      localStorage.setItem(prefix+'_viettel_endpoint',el('viettel-endpoint').value.trim());
+      localStorage.setItem(prefix+'_viettel_token',el('viettel-token').value.trim());
+      localStorage.setItem(prefix+'_viettel_voice',el('viettel-voice').value);
+      localStorage.setItem(prefix+'_viettel_voice_custom',el('viettel-voice-custom').value.trim());
+      localStorage.setItem(prefix+'_viettel_speed',el('viettel-speed').value);
+    }catch(e){}
+  }
+
+  async function loadViettelVoices(){
+    const token=el('viettel-token').value.trim();
+    const endpoint=el('viettel-endpoint').value.trim();
+    if(!token){alert('Nhập Token API Viettel AI trước!');return;}
+    const select=el('viettel-voice');
+    let origin=null;try{origin=new URL(endpoint).origin;}catch(e){}
+    const candidates=[];
+    if(origin){candidates.push(origin+'/tts/voices?token='+encodeURIComponent(token));candidates.push(origin+'/voices?token='+encodeURIComponent(token));}
+    candidates.push('https://viettelai.vn/tts/voices?token='+encodeURIComponent(token));
+    for(const url of candidates){
+      try{
+        const res=await fetch(url,{method:'GET',headers:{'accept':'*/*'}});
+        if(!res.ok)continue;
+        const data=await res.json();
+        const voices=Array.isArray(data)?data:(data.voices||data.data||data.result||[]);
+        if(!voices||!voices.length)continue;
+        const oldValue=select.value;
+        select.innerHTML='';
+        voices.forEach(v=>{
+          const code=typeof v==='string'?v:(v.Code||v.code||v.voice||v.name||v.id);
+          if(!code)return;
+          const label=(typeof v==='object'&&(v.Name||v.name||v.Description||v.label))?(v.Name||v.name||v.Description||v.label)+' ('+code+')':code;
+          const opt=document.createElement('option');opt.value=code;opt.innerText=label;select.appendChild(opt);
+        });
+        if([...select.options].some(o=>o.value===oldValue))select.value=oldValue;
+        saveTTSConfigToStorage();
+        alert('✓ Da tai '+select.options.length+' giong doc tu: '+url);
+        return;
+      }catch(err){}
+    }
+    alert('Không tải được danh sách giọng đọc — danh sách có sẵn vẫn dùng bình thường.');
+  }
+
+  function initModule(pfx){
+    prefix=pfx;
+    ctx=canvas().getContext('2d');
+    setupUploads();
+    // Load font
+    Promise.all([
+      document.fonts.load('400 10pt "Be Vietnam Pro"'),
+      document.fonts.load('700 10pt "Be Vietnam Pro"'),
+      document.fonts.load('900 10pt "Be Vietnam Pro"')
+    ]).then(()=>{drawStaticPreview();setTimeout(drawStaticPreview,300);});
+
+    loadTTSConfigFromStorage(pfx);
+    ['viettel-endpoint','viettel-token','viettel-voice','viettel-voice-custom','viettel-speed'].forEach(id=>{
+      const e=el(id);if(e)e.addEventListener('change',saveTTSConfigToStorage);
+    });
+
+    el('render-btn').addEventListener('click',buildSlidesListUI);
+    el('start-btn').addEventListener('click',startRecording);
+    el('tts-all-btn').addEventListener('click',generateTTSForAll);
+    el('load-voices-btn').addEventListener('click',loadViettelVoices);
+  }
+
+  return {
+    init:initModule, changePreviewSlide, playCurrentPreviewAudio,
+    handleSlideImageUpload, handleAudioUpload,
+    openScriptEditor, closeScriptEditor, resetScriptToSlideContent, saveScriptEditor,
+    generateTTSForSlide, toggleAudioRecord,
+    buildSlidesListUI, drawStaticPreview, setPrefix,
+    slidesData:()=>slidesData
+  };
+})();
+
+// ============================================================
+// AUTO FLOW WIZARD
+// ============================================================
+const AutoFlow = (() => {
+  let currentStep = 1;
+
+  function setStep(n){
+    currentStep = n;
+    // Stepper UI
+    for(let i=1;i<=3;i++){
+      const stepEl=$('ws'+i),connEl=$('wc'+(i-1));
+      stepEl.className='wizard-step'+(i===n?' active':'')+(i<n?' done':'');
+      if(connEl)connEl.className='wizard-connector'+(i<=n?' done':'');
+    }
+    // Panels
+    for(let i=1;i<=3;i++){
+      const panel=$('wiz-step'+i);
+      panel.className='wizard-step-panel'+(i===n?' active':'');
+    }
+    // Actions
+    $('wiz-back-btn').style.display=n>1?'inline-block':'none';
+    $('wiz-approve-btn').style.display=n<3?'inline-block':'none';
+    $('wiz-approve-btn').textContent=n===1?'Đã duyệt, chuyển sang Bước 2 →':'Đã duyệt, chuyển sang Bước 3 →';
+
+    // Init M3 for step 3
+    if(n===3){
+      M3.setPrefix('w3');
+      M3.init('w3');
+      // Push data from step 2 to module 3
+      if(window.AppFlowState.step2.slidesJson){
+        $('w3-json-input').value=JSON.stringify(window.AppFlowState.step2.slidesJson,null,2);
+      }
+    }
+  }
+
+  // --- Step 1: Script generation ---
+  function initStep1(){
+    const log=makeLogFn('w1-log-box');
+    populateModels($('w1-provider-select').value,'w1-model-select');
+    setupFileDrop('w1-file-drop','w1-file-input','w1-source-text',log);
+    $('w1-provider-select').addEventListener('change',()=>populateModels($('w1-provider-select').value,'w1-model-select'));
+
+    $('w1-generate-btn').addEventListener('click',async()=>{
+      const topic=$('w1-topic').value.trim();
+      const sourceText=$('w1-source-text').value.trim();
+      const apiKey=$('w1-api-key').value.trim();
+      const provider=$('w1-provider-select').value;
+      const model=getModelVal('w1-model-select','w1-model-custom');
+      const bodySections=$('w1-body-sections').value;
+      const extraHint=$('w1-extra-hint').value.trim();
+      if(!sourceText){alert('Vui long cung cap noi dung bai viet.');return;}
+      if(!apiKey){alert('Vui long nhap API Key.');return;}
+      if(!model){alert('Hay chon model.');return;}
+
+      $('w1-generate-btn').disabled=true;
+      log('TẠO KỊCH BẢN — '+provider.toUpperCase()+' / '+model,'info');
+      try{
+        // Build prompt same as M1
+        const topicLine=topic?'[CHU DE CHINH: "'+topic+'"]\n':'';
+        const introTopic=topic?'Lam noi bat chu de "'+topic+'" trong cau nghich ly.':'';
+        const sectionGuide=bodySections==='4'?'Chia noi dung thanh 4 y chinh:':'Chia noi dung thanh 3 y chinh:';
+        const prompt=`Ban la Content Creator & Chuyen gia Tai chinh. Chuyen bai viet thanh kich ban video ngan (duoi 60s) cuon hut, BAM SAT 100% NOI DUNG GOC.
+Dai tu: Toi - Ban. QUY TAC: KHONG TU BIA VI DU. TON TRONG BAN GOC. NHIP DO TIKTOK. NGON NGU DOI THUONG.
+DINH DANG:
+[BEGIN_INTRO]
+- Tieu de Intro: Viet HOA ten chu de "${topic||'CHU DE'}"
+- Cau 1: "Ai cung muon tien de ra tien. But..." (dien tiep nghich ly tu bai goc). ${introTopic}
+- Cau 2: Cau hoi xoau sau vao van de chinh.
+[END_INTRO]
+[BEGIN_BODY]
+${sectionGuide}
+- Y 1: [Ten y chinh] — [Giai thich ngan gon]
+- Y 2: [Ten y chinh] — [Giai thich ngan gon]
+- Y 3: [Ten y chinh] — [Giai thich ngan gon]
+[END_BODY]
+[BEGIN_OUTRO]
+- Tom tat gia tri cot loi trong 1 cau chat.
+- Cau chot: "Theo quan diem cua ban, [Cau hoi mo]. De lai y kien."
+[END_OUTRO]
+${topicLine}${extraHint?'GOI Y: '+extraHint+'\n\n':''}BAI VIET GOC:
+"""""${sourceText}"""""
+Tien hanh viet NGAY TU [BEGIN_INTRO].`;
+        const scriptText=await callAI(provider,apiKey,model,prompt,false);
+        if(!scriptText||scriptText.trim().length<50)throw new Error('Ket qua qua ngan.');
+        log('Tao xong kich ban!','ok');
+
+        // Store in global state
+        window.AppFlowState.step1={scriptText,sourceText,topic,provider,model,apiKey,bodySections,extraHint};
+
+        // Show review
+        $('w1-review-section').style.display='block';
+        $('w1-review-edit').value=scriptText;
+        log('Hãy kiểm duyệt kết quả bên dưới. Có thể sửa tay. Khi hài lòng, bấm "Đã duyệt".','info');
+      }catch(err){
+        log('Loi: '+err.message,'err');
+      }finally{$('w1-generate-btn').disabled=false;}
+    });
+  }
+
+  // --- Approve button ---
+  function initApprove(){
+    $('wiz-approve-btn').addEventListener('click',()=>{
+      if(currentStep===1){
+        // Save edited script back to state
+        const editedScript=$('w1-review-edit').value.trim();
+        window.AppFlowState.step1.scriptText=editedScript;
+        // Push to step 2
+        $('w2-source-text').value=editedScript;
+        $('w2-topic').value=window.AppFlowState.step1.topic||'';
+        $('w2-api-key').value=window.AppFlowState.step1.apiKey||'';
+        if(window.AppFlowState.step1.provider)$('w2-provider-select').value=window.AppFlowState.step1.provider;
+        populateModels($('w2-provider-select').value,'w2-model-select');
+        if(window.AppFlowState.step1.model)$('w2-model-select').value=window.AppFlowState.step1.model;
+        setStep(2);
+      }else if(currentStep===2){
+        // Save edited JSON/script
+        const editedJson=$('w2-review-json').value.trim();
+        const editedScript=$('w2-review-script').value.trim();
+        try{
+          window.AppFlowState.step2.slidesJson=JSON.parse(editedJson);
+        }catch(e){
+          alert('JSON khong hop le! Vui long fix truoc khi chuyen buoc.');
+          return;
+        }
+        window.AppFlowState.step2.scriptText=editedScript;
+        setStep(3);
+      }
+    });
+    $('wiz-back-btn').addEventListener('click',()=>{
+      if(currentStep>1)setStep(currentStep-1);
+    });
+  }
+
+  // --- Step 2: Slides JSON ---
+  function initStep2(){
+    const log=makeLogFn('w2-log-box');
+    populateModels($('w2-provider-select').value,'w2-model-select');
+    $('w2-provider-select').addEventListener('change',()=>populateModels($('w2-provider-select').value,'w2-model-select'));
+
+    $('w2-generate-btn').addEventListener('click',async()=>{
+      const topic=$('w2-topic').value.trim();
+      const sourceText=$('w2-source-text').value.trim();
+      const apiKey=$('w2-api-key').value.trim();
+      const provider=$('w2-provider-select').value;
+      const model=getModelVal('w2-model-select','w2-model-custom');
+      const minSlides=parseInt($('w2-min-slides').value,10)||8;
+      const minWords=parseInt($('w2-min-words').value,10)||60;
+      if(!sourceText){alert('Vui long cung cap noi dung goc.');return;}
+      if(!apiKey){alert('Vui long nhap API Key.');return;}
+      if(!model){alert('Hay chon model.');return;}
+
+      $('w2-generate-btn').disabled=true;
+      log('TẠO SLIDES JSON — '+provider.toUpperCase()+' / '+model,'info');
+
+      try{
+        // Step A: Generate JSON
+        const introTitle=topic?topic.toUpperCase():'TIEU DE';
+        const jsonPrompt=`Output ONLY raw JSON. No markdown, no explanation.
+Schema: {"slides":[{"type":"intro|concept|chat|chart|motion_graphic|outro","title":"IN HOA","content":"short text with *keywords*","duration":5000,"layout":"center|split_screen|bottom_heavy","visual_assets":{"chat_messages":[{"sender":"user|admin","text":"..."}],"chart_data":[1,2,3],"graphic_type":"radar|sine_wave|car_driving|math_parabola"}}]}
+Rules: First=intro title="${introTitle}", Last=outro. Alternate types. Min ${minSlides} slides. dur>=5000. Wrap keywords with *.
+Source: """${sourceText}"""`;
+        const rawJson=await callAI(provider,apiKey,model,jsonPrompt,true);
+        let parsed;
+        try{parsed=JSON.parse(repairTruncatedJson(rawJson));}catch(e){throw new Error('JSON khong hop le: '+e.message);}
+        log('JSON slide da tao: '+parsed.slides.length+' slide','ok');
+
+        // Build slides
+        const slidesJson=parsed.slides.map(s=>{
+          const content=s.content||s.text_content||'';
+          const slide={type:s.type||'concept',title:s.title||'',content,duration:s.duration||(s.type==='intro'?5000:Math.max(5000,Math.min(4000+wordCount(content)*400,10000))),layout:s.layout||'center',visual_assets:{}};
+          const va=s.visual_assets||{};
+          if(s.type==='chat'&&Array.isArray(va.chat_messages))slide.visual_assets.chat_messages=va.chat_messages;
+          if(s.type==='chart'&&Array.isArray(va.chart_data))slide.visual_assets.chart_data=va.chart_data;
+          if(s.type==='motion_graphic'&&va.graphic_type)slide.visual_assets.graphic_type=va.graphic_type;
+          if(va.bg_color)slide.visual_assets.bg_color=va.bg_color;
+          return slide;
+        });
+
+        // Step B: Generate voice-over script
+        log('Đang sinh voice-over...','info');
+        const scriptPrompt=`Ban la bien tap vien voice-over. Viet loi thuyet minh cho TUNG slide.
+NOI DUNG GOC: """${sourceText}"""
+KHUNG SLIDE: """${JSON.stringify(slidesJson,null,2)}"""
+YEU CAU: Than thien, xung "minh", goi nguoi xem la "ban". Moi slide toi thieu ${minWords} tu.
+DAU RA: Text thuan:
+--- SLIDE 1: [TIEU DE] ({TYPE}) ---
+[Loi thoai...]`;
+        const scriptText=await callAI(provider,apiKey,model,scriptPrompt,false);
+        log('Voice-over da tao!','ok');
+
+        // Show reviews
+        $('w2-review-section').style.display='block';
+        $('w2-review-json').value=JSON.stringify(slidesJson,null,2);
+        $('w2-review-script').value=scriptText;
+        window.AppFlowState.step2={slidesJson,scriptText,topic,sourceText,provider,model,apiKey};
+        log('Hãy kiểm duyệt JSON và voice-over. Khi hài lòng, bấm "Đã duyệt".','info');
+      }catch(err){
+        log('Loi: '+err.message,'err');
+      }finally{$('w2-generate-btn').disabled=false;}
+    });
+  }
+
+  function init(){
+    initStep1();initStep2();initApprove();
+    setStep(1);
+  }
+  return{init};
+})();
+
+// ============================================================
+// BOOT
+// ============================================================
+M1.init();
+M2.init();
+M3.init('m3'); // Init standalone module 3 with m3 prefix
+AutoFlow.init();
+</script>
+</body>
+</html>
