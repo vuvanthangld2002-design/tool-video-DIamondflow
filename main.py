@@ -25,19 +25,25 @@ async def add_coop_coep_headers(request: Request, call_next):
     return response
 
 # ---------------------------------------------------------------------------
-# Static files & templates
+# Static files & templates (FIXED FOR VERCEL SERVERLESS)
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+# Ép hệ thống tự tạo thư mục nếu Vercel lỡ "bỏ quên" lúc đóng gói
+static_dir = os.path.join(BASE_DIR, "static")
+os.makedirs(static_dir, exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+templates_dir = os.path.join(BASE_DIR, "templates")
+os.makedirs(templates_dir, exist_ok=True)
+templates = Jinja2Templates(directory=templates_dir)
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 # ---------------------------------------------------------------------------
-# API Key storage (server-side, in-memory — extend to .env or DB as needed)
-# In production, load from environment variables instead.
+# API Key storage
 # ---------------------------------------------------------------------------
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
